@@ -1,0 +1,945 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1642</width>
+    <height>1044</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true"/>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QVBoxLayout" name="verticalLayout_7">
+    <item>
+     <layout class="QHBoxLayout" name="horizontalLayout">
+      <item>
+       <widget class="QLabel" name="View">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>640</width>
+          <height>480</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>640</width>
+          <height>480</height>
+         </size>
+        </property>
+        <property name="frameShape">
+         <enum>QFrame::StyledPanel</enum>
+        </property>
+        <property name="text">
+         <string>Front View</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="Color">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>100</width>
+          <height>480</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>100</width>
+          <height>480</height>
+         </size>
+        </property>
+        <property name="frameShape">
+         <enum>QFrame::StyledPanel</enum>
+        </property>
+        <property name="text">
+         <string>C</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="H">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>100</width>
+          <height>480</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>100</width>
+          <height>480</height>
+         </size>
+        </property>
+        <property name="frameShape">
+         <enum>QFrame::StyledPanel</enum>
+        </property>
+        <property name="text">
+         <string>H</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="S">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>100</width>
+          <height>480</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>100</width>
+          <height>480</height>
+         </size>
+        </property>
+        <property name="frameShape">
+         <enum>QFrame::StyledPanel</enum>
+        </property>
+        <property name="text">
+         <string>S</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <layout class="QVBoxLayout" name="verticalLayout">
+        <item>
+         <widget class="QGroupBox" name="Front_Controls">
+          <property name="title">
+           <string>Front Controls</string>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayout_3">
+           <item>
+            <widget class="QLineEdit" name="Front_Result">
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>50</height>
+              </size>
+             </property>
+             <property name="font">
+              <font>
+               <pointsize>16</pointsize>
+              </font>
+             </property>
+             <property name="styleSheet">
+              <string notr="true"/>
+             </property>
+             <property name="text">
+              <string/>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignCenter</set>
+             </property>
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <layout class="QFormLayout" name="formLayout">
+             <property name="fieldGrowthPolicy">
+              <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+             </property>
+             <item row="0" column="0">
+              <widget class="QLabel" name="label_3">
+               <property name="text">
+                <string>Front Type</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="QComboBox" name="Front_Type"/>
+             </item>
+             <item row="1" column="0">
+              <widget class="QLabel" name="label_2">
+               <property name="text">
+                <string>Silver Reading</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="1">
+              <widget class="QLineEdit" name="Silver_Reading">
+               <property name="alignment">
+                <set>Qt::AlignCenter</set>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="0">
+              <widget class="QLabel" name="label_5">
+               <property name="text">
+                <string>Silver Reference</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="1">
+              <widget class="QLineEdit" name="Silver_Reference">
+               <property name="alignment">
+                <set>Qt::AlignCenter</set>
+               </property>
+               <property name="readOnly">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="0">
+              <widget class="QLabel" name="label">
+               <property name="text">
+                <string>Copper Reading</string>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="1">
+              <widget class="QLineEdit" name="Copper_Reading">
+               <property name="alignment">
+                <set>Qt::AlignCenter</set>
+               </property>
+               <property name="readOnly">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item row="4" column="0">
+              <widget class="QLabel" name="label_7">
+               <property name="text">
+                <string>Copper Reference</string>
+               </property>
+              </widget>
+             </item>
+             <item row="4" column="1">
+              <widget class="QLineEdit" name="Copper_Reference">
+               <property name="alignment">
+                <set>Qt::AlignCenter</set>
+               </property>
+               <property name="readOnly">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item row="5" column="0">
+              <widget class="QLabel" name="label_4">
+               <property name="text">
+                <string>Current Discrepancy</string>
+               </property>
+              </widget>
+             </item>
+             <item row="5" column="1">
+              <widget class="QLineEdit" name="Current_Discrepancy">
+               <property name="alignment">
+                <set>Qt::AlignCenter</set>
+               </property>
+               <property name="readOnly">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <widget class="QPushButton" name="Front_Learn">
+             <property name="statusTip">
+              <string>Learn colors based on the current capture in blue roi</string>
+             </property>
+             <property name="text">
+              <string>Learn Front Colors</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_13">
+             <property name="text">
+              <string>Locator Sensitivity</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSlider" name="Front_Threshold">
+             <property name="minimum">
+              <number>100</number>
+             </property>
+             <property name="maximum">
+              <number>255</number>
+             </property>
+             <property name="value">
+              <number>200</number>
+             </property>
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_7">
+             <item>
+              <widget class="QLabel" name="label_17">
+               <property name="text">
+                <string>Camera Shutter</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QSpinBox" name="Camera_Shutter">
+               <property name="alignment">
+                <set>Qt::AlignCenter</set>
+               </property>
+               <property name="suffix">
+                <string> us</string>
+               </property>
+               <property name="minimum">
+                <number>100</number>
+               </property>
+               <property name="maximum">
+                <number>50000</number>
+               </property>
+               <property name="singleStep">
+                <number>20</number>
+               </property>
+               <property name="value">
+                <number>200</number>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_5">
+             <item>
+              <widget class="QLabel" name="Min_Silver">
+               <property name="text">
+                <string>Min. Silver</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QDoubleSpinBox" name="Front_Min_Silver">
+               <property name="alignment">
+                <set>Qt::AlignCenter</set>
+               </property>
+               <property name="suffix">
+                <string> mm</string>
+               </property>
+               <property name="maximum">
+                <double>1.000000000000000</double>
+               </property>
+               <property name="singleStep">
+                <double>0.020000000000000</double>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <spacer name="verticalSpacer">
+             <property name="orientation">
+              <enum>Qt::Vertical</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>20</width>
+               <height>40</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
+          <zorder>Front_Learn</zorder>
+          <zorder>verticalSpacer</zorder>
+          <zorder>Front_Threshold</zorder>
+          <zorder>label_13</zorder>
+          <zorder>Front_Result</zorder>
+          <zorder></zorder>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QVBoxLayout" name="verticalLayout_6">
+        <item>
+         <layout class="QVBoxLayout" name="verticalLayout_2">
+          <item>
+           <widget class="QGroupBox" name="Back_Controls">
+            <property name="title">
+             <string>Back Controls</string>
+            </property>
+            <layout class="QVBoxLayout" name="verticalLayout_4">
+             <item>
+              <widget class="QLineEdit" name="Back_Result">
+               <property name="minimumSize">
+                <size>
+                 <width>0</width>
+                 <height>50</height>
+                </size>
+               </property>
+               <property name="font">
+                <font>
+                 <pointsize>16</pointsize>
+                </font>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignCenter</set>
+               </property>
+               <property name="readOnly">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <layout class="QFormLayout" name="formLayout_2">
+               <property name="fieldGrowthPolicy">
+                <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+               </property>
+               <item row="0" column="0">
+                <widget class="QLabel" name="label_6">
+                 <property name="text">
+                  <string>Back Type</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="0" column="1">
+                <widget class="QComboBox" name="Back_Type"/>
+               </item>
+               <item row="1" column="0">
+                <widget class="QLabel" name="label_8">
+                 <property name="text">
+                  <string>Silver Reading</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="1">
+                <widget class="QLineEdit" name="Silver_Reading_Back">
+                 <property name="alignment">
+                  <set>Qt::AlignCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item row="2" column="0">
+                <widget class="QLabel" name="label_9">
+                 <property name="text">
+                  <string>Silver Reference</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="2" column="1">
+                <widget class="QLineEdit" name="Silver_Reference_Back">
+                 <property name="alignment">
+                  <set>Qt::AlignCenter</set>
+                 </property>
+                 <property name="readOnly">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+               <item row="3" column="0">
+                <widget class="QLabel" name="label_10">
+                 <property name="text">
+                  <string>Copper Reading</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="3" column="1">
+                <widget class="QLineEdit" name="Copper_Reading_Back">
+                 <property name="alignment">
+                  <set>Qt::AlignCenter</set>
+                 </property>
+                 <property name="readOnly">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+               <item row="4" column="0">
+                <widget class="QLabel" name="label_11">
+                 <property name="text">
+                  <string>Copper Reference</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="4" column="1">
+                <widget class="QLineEdit" name="Copper_Reference_Back">
+                 <property name="alignment">
+                  <set>Qt::AlignCenter</set>
+                 </property>
+                 <property name="readOnly">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+               <item row="5" column="0">
+                <widget class="QLabel" name="label_12">
+                 <property name="text">
+                  <string>Current Discrepancy</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="5" column="1">
+                <widget class="QLineEdit" name="Current_Discrepancy_Back">
+                 <property name="alignment">
+                  <set>Qt::AlignCenter</set>
+                 </property>
+                 <property name="readOnly">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+             <item>
+              <widget class="QPushButton" name="Back_Learn">
+               <property name="text">
+                <string>Learn Back Colors</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="label_14">
+               <property name="text">
+                <string>Locator Sensitivity</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QSlider" name="Back_Threshold">
+               <property name="minimum">
+                <number>100</number>
+               </property>
+               <property name="maximum">
+                <number>255</number>
+               </property>
+               <property name="value">
+                <number>200</number>
+               </property>
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <layout class="QHBoxLayout" name="horizontalLayout_6">
+               <item>
+                <widget class="QLabel" name="label_16">
+                 <property name="text">
+                  <string>Min. Silver</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QDoubleSpinBox" name="Back_Min_Silver">
+                 <property name="alignment">
+                  <set>Qt::AlignCenter</set>
+                 </property>
+                 <property name="suffix">
+                  <string> mm</string>
+                 </property>
+                 <property name="maximum">
+                  <double>1.000000000000000</double>
+                 </property>
+                 <property name="singleStep">
+                  <double>0.020000000000000</double>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+             <item>
+              <spacer name="verticalSpacer_2">
+               <property name="orientation">
+                <enum>Qt::Vertical</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>20</width>
+                 <height>40</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+            </layout>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" name="horizontalLayout_4">
+      <item>
+       <widget class="QLabel" name="View_Back">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>640</width>
+          <height>480</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>640</width>
+          <height>480</height>
+         </size>
+        </property>
+        <property name="frameShape">
+         <enum>QFrame::StyledPanel</enum>
+        </property>
+        <property name="text">
+         <string>Back View</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="Color_Back">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>100</width>
+          <height>480</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>100</width>
+          <height>480</height>
+         </size>
+        </property>
+        <property name="frameShape">
+         <enum>QFrame::StyledPanel</enum>
+        </property>
+        <property name="text">
+         <string>C</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="H_Back">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>100</width>
+          <height>480</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>100</width>
+          <height>480</height>
+         </size>
+        </property>
+        <property name="frameShape">
+         <enum>QFrame::StyledPanel</enum>
+        </property>
+        <property name="text">
+         <string>H</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="S_Back">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>100</width>
+          <height>480</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>100</width>
+          <height>480</height>
+         </size>
+        </property>
+        <property name="frameShape">
+         <enum>QFrame::StyledPanel</enum>
+        </property>
+        <property name="text">
+         <string>S</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <layout class="QVBoxLayout" name="verticalLayout_5">
+        <item>
+         <widget class="QPushButton" name="Start">
+          <property name="statusTip">
+           <string>Start front camera</string>
+          </property>
+          <property name="text">
+           <string>Start Camera(s)</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="Stop">
+          <property name="statusTip">
+           <string>Stop front camera</string>
+          </property>
+          <property name="text">
+           <string>Stop Camera(s)</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_2">
+          <item>
+           <widget class="QLabel" name="label_15">
+            <property name="text">
+             <string>Counter</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="Counter">
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
+            <property name="readOnly">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="groupBox">
+          <property name="title">
+           <string>Results</string>
+          </property>
+          <layout class="QHBoxLayout" name="horizontalLayout_3">
+           <item>
+            <widget class="QTextBrowser" name="Results"/>
+           </item>
+          </layout>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <widget class="QMenuBar" name="menuBar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1642</width>
+     <height>26</height>
+    </rect>
+   </property>
+   <property name="defaultUp">
+    <bool>false</bool>
+   </property>
+   <property name="nativeMenuBar">
+    <bool>true</bool>
+   </property>
+   <widget class="QMenu" name="menuData_Record">
+    <property name="title">
+     <string>Data Recording</string>
+    </property>
+    <addaction name="actionSet_Lot_Number"/>
+    <addaction name="actionSet_Output_Folder"/>
+    <addaction name="separator"/>
+    <addaction name="actionStart_Data_Logging"/>
+    <addaction name="separator"/>
+   </widget>
+   <widget class="QMenu" name="menuControls">
+    <property name="title">
+     <string>Controls</string>
+    </property>
+    <addaction name="actionActual_Counter_Reset"/>
+    <addaction name="separator"/>
+    <addaction name="actionDelay_Inspection"/>
+    <addaction name="actionBypass_Results"/>
+    <addaction name="separator"/>
+    <addaction name="actionClear_Alarm"/>
+   </widget>
+   <widget class="QMenu" name="menuAbout">
+    <property name="title">
+     <string>About</string>
+    </property>
+   </widget>
+   <widget class="QMenu" name="menuExit">
+    <property name="title">
+     <string>Exit</string>
+    </property>
+    <addaction name="actionQuit"/>
+   </widget>
+   <widget class="QMenu" name="menuCamera">
+    <property name="title">
+     <string>Cameras</string>
+    </property>
+    <addaction name="actionEnable_Front_Camera_2"/>
+    <addaction name="actionEnable_Back_Camera"/>
+   </widget>
+   <addaction name="menuCamera"/>
+   <addaction name="menuControls"/>
+   <addaction name="menuData_Record"/>
+   <addaction name="menuExit"/>
+   <addaction name="menuAbout"/>
+  </widget>
+  <action name="actionDelay_Inspection">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Delay Inspection</string>
+   </property>
+   <property name="statusTip">
+    <string>Delay interval between each inspection to 1 second.</string>
+   </property>
+  </action>
+  <action name="actionSet_Output_Folder">
+   <property name="text">
+    <string>Set Output Folder</string>
+   </property>
+   <property name="statusTip">
+    <string>Set the folder in which data will be recorded.</string>
+   </property>
+  </action>
+  <action name="actionSet_Lot_Number">
+   <property name="text">
+    <string>Register Lot Number</string>
+   </property>
+   <property name="statusTip">
+    <string>Register the lot number for this production.</string>
+   </property>
+  </action>
+  <action name="actionQuit">
+   <property name="text">
+    <string>Quit</string>
+   </property>
+   <property name="statusTip">
+    <string>Quit the inspection program.</string>
+   </property>
+  </action>
+  <action name="actionStart_Data_Logging">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Start Data Logging</string>
+   </property>
+   <property name="statusTip">
+    <string>Start data logging once camera has been started.</string>
+   </property>
+  </action>
+  <action name="actionActual_Counter_Reset">
+   <property name="text">
+    <string>Counter Reset</string>
+   </property>
+   <property name="statusTip">
+    <string>Reset actual counter to zero.</string>
+   </property>
+  </action>
+  <action name="actionBypass_Results">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Bypass Results</string>
+   </property>
+   <property name="statusTip">
+    <string>Bypass fail inspection results. Fail alarm will not be triggered if this is checked.</string>
+   </property>
+  </action>
+  <action name="actionEnable_Front_Camera">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Enable Front Camera</string>
+   </property>
+  </action>
+  <action name="actionEnable_Back_camera">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Enable Back Camera</string>
+   </property>
+  </action>
+  <action name="actionEnable_Front_Camera_2">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Use Front Camera</string>
+   </property>
+  </action>
+  <action name="actionEnable_Back_Camera">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Use Back Camera</string>
+   </property>
+  </action>
+  <action name="actionClear_Alarm">
+   <property name="text">
+    <string>Clear Alarm</string>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
