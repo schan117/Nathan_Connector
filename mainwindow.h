@@ -15,8 +15,12 @@
 
 struct Product_Type
 {
+    int index;
     QString name;
-    QString vision_ini;
+    int use_front;
+    int use_back;
+    QString vision_ini_front;
+    QString vision_ini_back;
 };
 
 namespace Ui {
@@ -94,7 +98,7 @@ private:
 
     AVT::VmbAPI::Vimba_Wrapper vw;
 
-    Measurement front_m;
+    Measurement measurement;
 
     Camera_Thread	camera_thread;
 

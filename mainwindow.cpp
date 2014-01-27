@@ -27,7 +27,7 @@ MainWindow::MainWindow(QWidget *parent) :
         bypass_result = false;
         fail_alarmed = false;
 
-        Load_Settings();
+        qDebug() << "Load Product Settings returns:" << Load_Settings();
 
         Disable_Back_Camera_Controls();
 
@@ -60,6 +60,10 @@ MainWindow::MainWindow(QWidget *parent) :
                 labjack_ok = false;
             }
         }
+        else
+        {
+            qDebug() << "Not using labjack!";
+        }
 
         if (Initialize_Vimba_System())
         {
@@ -75,20 +79,40 @@ MainWindow::MainWindow(QWidget *parent) :
 
             camera_thread.Initialize(&vw);
 
-
             bool load_ok = false;
 
             for (int i=0; i<product_count; i++)
             {
-                if (front_m.Load_Settings(i, product_type[i].vision_ini))
+                // load in front camera settings
+                if (product_type[i].use_front)
                 {
-                    qDebug("Load in parameters successful for product %d, %s", i, product_type[i].vision_ini.toLatin1().constData());
-                    load_ok = true;
+                    if (measurement.Load_Settings(2*i, product_type[i].vision_ini_front))
+                    {
+                        qDebug() << "Load in parameters successful for product:" <<  product_type[i].vision_ini_front;
+                        load_ok = true;
+                    }
+                    else
+                    {
+                        qDebug() << "Load in parameters NOT successful for product:" << product_type[i].vision_ini_front;
+                        load_ok = false;
+                        break;
+                    }
                 }
-                else
+
+                // load in back camera settings
+                if (product_type[i].use_back)
                 {
-                    load_ok = false;
-                    break;
+                    if (measurement.Load_Settings(2*i + 1, product_type[i].vision_ini_back))
+                    {
+                        qDebug() << "Load in parameters successful for product:" << product_type[i].vision_ini_back;
+                        load_ok = true;
+                    }
+                    else
+                    {
+                        qDebug() << "Load in parameters NOT successful for product:" << product_type[i].vision_ini_back;
+                        load_ok = false;
+                        break;
+                    }
                 }
             }
 
@@ -118,14 +142,9 @@ MainWindow::MainWindow(QWidget *parent) :
                 }
                 else if   (vw.cameras_opened == 1)
                 {
-                    qDebug() << "here!!!";
                     ui->actionEnable_Front_Camera_2->setChecked(true);
                     ui->actionEnable_Back_Camera->setEnabled(true);
                 }
-
-
-
-
 
                 // fill in reference color informations
 
@@ -622,12 +641,13 @@ bool MainWindow::Load_Settings()
     product_type = new Product_Type[product_count];
 
     for (int i=0; i<product_count; i++)
-    {
+    {\
+        product_type[i].index = i;
         product_type[i].name = set.value(QString("Product%1/Name").arg(i)).toString();
-        ui->Front_Type->addItem(product_type[i].name);
-        ui->Back_Type->addItem(product_type[i].name);
+        ui->Product_Type->addItem(product_type[i].name);
 
-        product_type[i].vision_ini = set.value(QString("Product%1/Vision_Ini_Name").arg(i)).toString();
+        product_type[i].vision_ini_front = set.value(QString("Product%1/Vision_Ini_Name_Front").arg(i)).toString();
+        product_type[i].vision_ini_back = set.value(QString("Product%1/Vision_Ini_Name_Back").arg(i)).toString();
     }
 
     output_folder = set.value("Main/Output_Folder").toString();

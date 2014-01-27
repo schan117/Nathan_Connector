@@ -20,6 +20,8 @@
 #define	LOCATOR_INVALID	3	
 #define	ROI_INVALID		4			
 
+#define MAX_PRODUCT_COUNT   10
+
 
 struct Inspection_Settings
 {
@@ -98,7 +100,7 @@ public:
 
 	double result[20];
 
-	Inspection_Settings is[6];
+    Inspection_Settings is[MAX_PRODUCT_COUNT*2];
 
 private:
 

@@ -137,7 +137,7 @@
         <item>
          <widget class="QGroupBox" name="Front_Controls">
           <property name="title">
-           <string>Front Controls</string>
+           <string>Front Camera</string>
           </property>
           <layout class="QVBoxLayout" name="verticalLayout_3">
            <item>
@@ -390,7 +390,7 @@
           <item>
            <widget class="QGroupBox" name="Back_Controls">
             <property name="title">
-             <string>Back Controls</string>
+             <string>Back Camera</string>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_4">
              <item>
@@ -593,7 +593,7 @@
      </layout>
     </item>
     <item>
-     <layout class="QHBoxLayout" name="horizontalLayout_4">
+     <layout class="QHBoxLayout" name="horizontalLayout_8">
       <item>
        <widget class="QLabel" name="View_Back">
         <property name="sizePolicy">
@@ -708,6 +708,20 @@
       </item>
       <item>
        <layout class="QVBoxLayout" name="verticalLayout_5">
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_4">
+          <item>
+           <widget class="QLabel" name="label_18">
+            <property name="text">
+             <string>Product</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QComboBox" name="Product_Type"/>
+          </item>
+         </layout>
+        </item>
         <item>
          <widget class="QPushButton" name="Start">
           <property name="statusTip">
