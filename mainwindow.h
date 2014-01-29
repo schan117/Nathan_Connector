@@ -73,7 +73,6 @@ public slots:
     void On_Back_Locator_Threshold_Changed(int value);
     void On_Back_Locator_Threshold_Finished();
     void On_Action_Quit();
-    void On_Action_Register_Lot_Number();
     void On_Action_Select_Output_Folder();
     void On_Action_Start_Data_Logging(bool toggled);
     void On_Request_Counter_Update(long counter);
@@ -152,6 +151,8 @@ private:
     bool back_prev_result;
     bool front_fail_alarmed;
     bool back_fail_alarmed;
+
+    bool Register_Lot_Number();
 
 
 };

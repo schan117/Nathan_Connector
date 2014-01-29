@@ -864,7 +864,6 @@
     <property name="title">
      <string>Data Recording</string>
     </property>
-    <addaction name="actionSet_Lot_Number"/>
     <addaction name="actionSet_Output_Folder"/>
     <addaction name="separator"/>
     <addaction name="actionStart_Data_Logging"/>

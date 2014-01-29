@@ -214,7 +214,6 @@ void MainWindow::Connect_Signals()
 
     connect(ui->actionQuit, SIGNAL(triggered()), this, SLOT(On_Action_Quit()));
     connect(ui->actionSet_Output_Folder, SIGNAL(triggered()), this, SLOT(On_Action_Select_Output_Folder()));
-    connect(ui->actionSet_Lot_Number, SIGNAL(triggered()), this, SLOT(On_Action_Register_Lot_Number()));
 
     connect(&lj_thread, SIGNAL(Counter0Read(long)), this, SLOT(On_Request_Counter_Update(long)));
     connect(&lj_thread, SIGNAL(GreenButtonTriggered()), this, SLOT(On_Green_Button_Triggered()));
@@ -988,25 +987,23 @@ void MainWindow::On_Action_Select_Output_Folder()
 
 }
 
-void MainWindow::On_Action_Register_Lot_Number()
+bool MainWindow::Register_Lot_Number()
 {
-    bool ok;
 
-    lot_number = QInputDialog::getText(this, tr("Register"), tr("Enter lot number:"), QLineEdit::Normal, "", &ok);
+    lot_number = QDateTime::currentDateTime().toString("[dd.MM.yyyy, hh.mm.ss.zzz]");
 
     QDir qdir(output_folder);
 
-    if (ok)
+    if (qdir.mkdir(lot_number) || qdir.exists(lot_number))
     {
-        if (qdir.mkdir(lot_number) || qdir.exists(lot_number))
-        {
-            QMessageBox::information(this, tr("Register"), QString(tr("Lot %1 registered at %2.")).arg(lot_number).arg(output_folder), QMessageBox::Ok, QMessageBox::Ok);
-        }
-        else
-        {
-            QMessageBox::information(this, tr("Register"), QString(tr("Error# RF1: Fail to register. Check administration right at selected folder!")), QMessageBox::Ok, QMessageBox::Ok);
-        }
+        //QMessageBox::information(this, tr("Register"), QString(tr("Lot %1 registered at %2.")).arg(lot_number).arg(output_folder), QMessageBox::Ok, QMessageBox::Ok);
+        return true;
     }
+    else
+    {
+        return false;
+    }
+
 
 }
 
@@ -1279,7 +1276,7 @@ void MainWindow::On_Action_Start_Data_Logging(bool toggled)
     {
         if (camera_thread.isRunning())
         {
-            if (!lot_number.isNull())
+            if (Register_Lot_Number())
             {
                 ready_and_do_data_logging = true;
 
@@ -1292,10 +1289,10 @@ void MainWindow::On_Action_Start_Data_Logging(bool toggled)
             }
             else
             {
-                QMessageBox::warning(this, tr("Start Data Logging"), tr("Please register lot number first."), QMessageBox::Ok, QMessageBox::Ok);
-                disconnect(ui->actionStart_Data_Logging, SIGNAL(toggled(bool)), this, SLOT(On_Action_Start_Data_Logging(bool)));
-                ui->actionStart_Data_Logging->setChecked(false);
-                connect(ui->actionStart_Data_Logging, SIGNAL(toggled(bool)), this, SLOT(On_Action_Start_Data_Logging(bool)));
+                 QMessageBox::warning(this, tr("Start Data Logging"), tr("Cannot register lot number under output folder. Check administration rigtht!"), QMessageBox::Ok, QMessageBox::Ok);
+                 disconnect(ui->actionStart_Data_Logging, SIGNAL(toggled(bool)), this, SLOT(On_Action_Start_Data_Logging(bool)));
+                 ui->actionStart_Data_Logging->setChecked(false);
+                 connect(ui->actionStart_Data_Logging, SIGNAL(toggled(bool)), this, SLOT(On_Action_Start_Data_Logging(bool)));
             }
         }
         else
@@ -1338,12 +1335,13 @@ void MainWindow::On_Green_Button_Triggered()
 
     if (camera_thread.isRunning() && !ready_and_do_data_logging)
     {
-        ui->actionStart_Data_Logging->setChecked(true);
-        ui->statusbar->showMessage(tr("Data logging started!"));
+            ui->actionStart_Data_Logging->setChecked(true);
+            ui->statusbar->showMessage(tr("Data logging started!"));
     }
-    else if (camera_thread.isRunning())
+    else if (camera_thread.isRunning() && ready_and_do_data_logging)
     {
-
+        ui->actionStart_Data_Logging->setChecked(false);
+        ui->statusbar->showMessage(tr("Data logging stopped!"));
     }
 }
 
