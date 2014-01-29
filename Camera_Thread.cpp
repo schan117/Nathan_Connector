@@ -9,7 +9,7 @@ Camera_Thread::Camera_Thread(void)
 	do_delay = false;
 	processing_finished = true;
 	do_front_camera = false;
-	do_back_camera = true;
+    do_back_camera = false;
 }
 
 
@@ -37,64 +37,83 @@ void Camera_Thread::run()
 		
 		qtime.restart();
 
-		if (do_front_camera)
-		{	
+        if (do_front_camera && do_back_camera)
+        {
+            // both cameras have to be used, do a sequential trigger
+            camera_index = 0;
 
             mutex.lock();
             vvw->Trigger_Frame(camera_index);
 
-            // block thread until frame is ready
             connect(vvw, SIGNAL(Frame_Received(int)), &q, SLOT(quit()));
             q.exec();
             disconnect(vvw, SIGNAL(Frame_Received(int)), &q, SLOT(quit()));
 
             vvw->Transfer_Frame(camera_index);
 
-			emit FrameReceived(camera_index);
-			
-		}
-		/*
-		if (do_back_camera)
-		{
-			camera_index = 1;
-			vvw->Trigger_Frame(camera_index);
+            camera_index = 1;
 
-			// block thread until frame is ready
-			while (vvw->frame_ready == false)
-			{
-				msleep(10);
-			}
+            vvw->Trigger_Frame(camera_index);
 
-			vvw->Transfer_Frame(camera_index);
+            connect(vvw, SIGNAL(Frame_Received(int)), &q, SLOT(quit()));
+            q.exec();
+            disconnect(vvw, SIGNAL(Frame_Received(int)), &q, SLOT(quit()));
 
-			while (processing_finished == false)
-			{
-				msleep(10);
-			}
+            vvw->Transfer_Frame(camera_index);
 
-			emit FrameReceived(camera_index);
-		}
-		*/
+            emit FrameReceived(camera_index);
+
+        }
+        else
+        {
+            if (do_front_camera)
+            {
+                camera_index = 0; // front camera
+
+                mutex.lock();
+                vvw->Trigger_Frame(camera_index);
+
+                // block thread until frame is ready
+                connect(vvw, SIGNAL(Frame_Received(int)), &q, SLOT(quit()));
+                q.exec();
+                disconnect(vvw, SIGNAL(Frame_Received(int)), &q, SLOT(quit()));
+
+
+                vvw->Transfer_Frame(camera_index);
+
+                emit FrameReceived(camera_index);
+
+            }
+            else if (do_back_camera)
+            {
+
+                camera_index = 1; // back camera
+
+                mutex.lock();
+                vvw->Trigger_Frame(camera_index);
+
+                // block thread until frame is ready
+                connect(vvw, SIGNAL(Frame_Received(int)), &q, SLOT(quit()));
+                q.exec();
+                disconnect(vvw, SIGNAL(Frame_Received(int)), &q, SLOT(quit()));
+
+                vvw->Transfer_Frame(camera_index);
+
+                emit FrameReceived(camera_index);
+            }
+        }
+
 		capture_time = qtime.elapsed();
-
-		// wait unit the main thread has finished processing the previous frame before emitting new signal
-			
-		// toggle flag immediately so that the next loop will be block if image comes faster than the processing
-		processing_finished = false;
 
 		// if there is a do delay request, hold the thread for a while
 		if (!do_delay)
 		{
-			msleep(10);
+            //msleep(10);
 		}
 		else
 		{
 			msleep(1000);
 		}
 		//////////////////////////////////////////////////////////////
-
-
-
-
 	}
 }

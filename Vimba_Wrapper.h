@@ -34,6 +34,8 @@ public:
 	 bool Trigger_Frame(int camera_index);
 	 bool Transfer_Frame(int camera_index);
 	 bool Set_Exposure(int camera_index, int value);
+     bool Set_Gain(int camera_index, float value);
+     bool Set_Image_Format(int camera_index, QString format);
 	 //bool Save_Frame(QString filename);
 
 	~Vimba_Wrapper(void);

@@ -18,7 +18,8 @@ public:
 	bool Reset_Counter0();
 	void Set_Output_State(int pin, int state);
 	void Counter0_Make_Reference();
-	void Set_Fail_Status(int state);
+    void Set_Front_Fail_Status(int state);
+    void Set_Back_Fail_Status(int state);
 	void Set_Ready_Status(int state);
 
 
@@ -29,7 +30,8 @@ private:
 	int green_button;
 	int red_button;
 
-	int fail_out;
+    int front_fail_out;
+    int back_fail_out;
 	int ready_out;
 
 	long counter0_reference;

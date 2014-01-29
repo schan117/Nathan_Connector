@@ -118,20 +118,28 @@ bool LJ_Wrapper::Load_Settings()
 	red_button = set.value("Input/Red_Button").toInt(&ok);
 	if (!ok) return false;
 
-	fail_out = set.value("Output/Fail").toInt(&ok);
+    front_fail_out = set.value("Output/Front_Fail").toInt(&ok);
 	if (!ok) return false;
+
+    back_fail_out = set.value("Output/Back_Fail").toInt(&ok);
+    if (!ok) return false;
 
 	ready_out = set.value("Output/Ready").toInt(&ok);
 	if (!ok) return false;
 
 	return true;
-
 }
 
-void LJ_Wrapper::Set_Fail_Status(int state)
+void LJ_Wrapper::Set_Front_Fail_Status(int state)
 {
-	eDO(handle, fail_out, state);
+    eDO(handle, front_fail_out, state);
 }
+
+void LJ_Wrapper::Set_Back_Fail_Status(int state)
+{
+    eDO(handle, back_fail_out, state);
+}
+
 void LJ_Wrapper::Set_Ready_Status(int state)
 {
 	eDO(handle, ready_out, state);

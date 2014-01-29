@@ -17,11 +17,11 @@
    <string notr="true"/>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QVBoxLayout" name="verticalLayout_7">
+   <layout class="QVBoxLayout" name="verticalLayout_6">
     <item>
      <layout class="QHBoxLayout" name="horizontalLayout">
       <item>
-       <widget class="QLabel" name="View">
+       <widget class="QLabel" name="View_Front">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -49,7 +49,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QLabel" name="Color">
+       <widget class="QLabel" name="Color_Front">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -77,7 +77,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QLabel" name="H">
+       <widget class="QLabel" name="H_Front">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -105,7 +105,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QLabel" name="S">
+       <widget class="QLabel" name="S_Front">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -139,7 +139,7 @@
           <property name="title">
            <string>Front Camera</string>
           </property>
-          <layout class="QVBoxLayout" name="verticalLayout_3">
+          <layout class="QVBoxLayout" name="verticalLayout_4">
            <item>
             <widget class="QLineEdit" name="Front_Result">
              <property name="minimumSize">
@@ -173,38 +173,45 @@
               <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
              </property>
              <item row="0" column="0">
-              <widget class="QLabel" name="label_3">
+              <widget class="QLabel" name="label_2">
                <property name="text">
-                <string>Front Type</string>
+                <string>Upper Reading</string>
                </property>
               </widget>
              </item>
              <item row="0" column="1">
-              <widget class="QComboBox" name="Front_Type"/>
-             </item>
-             <item row="1" column="0">
-              <widget class="QLabel" name="label_2">
-               <property name="text">
-                <string>Silver Reading</string>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="1">
-              <widget class="QLineEdit" name="Silver_Reading">
+              <widget class="QLineEdit" name="Upper_Reading_Front">
                <property name="alignment">
                 <set>Qt::AlignCenter</set>
                </property>
               </widget>
              </item>
-             <item row="2" column="0">
+             <item row="1" column="0">
               <widget class="QLabel" name="label_5">
                <property name="text">
-                <string>Silver Reference</string>
+                <string>Upper Reference</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="1">
+              <widget class="QLineEdit" name="Upper_Reference_Front">
+               <property name="alignment">
+                <set>Qt::AlignCenter</set>
+               </property>
+               <property name="readOnly">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="0">
+              <widget class="QLabel" name="label">
+               <property name="text">
+                <string>Lower Reading</string>
                </property>
               </widget>
              </item>
              <item row="2" column="1">
-              <widget class="QLineEdit" name="Silver_Reference">
+              <widget class="QLineEdit" name="Lower_Reading_Front">
                <property name="alignment">
                 <set>Qt::AlignCenter</set>
                </property>
@@ -214,14 +221,14 @@
               </widget>
              </item>
              <item row="3" column="0">
-              <widget class="QLabel" name="label">
+              <widget class="QLabel" name="label_7">
                <property name="text">
-                <string>Copper Reading</string>
+                <string>Lower Reference</string>
                </property>
               </widget>
              </item>
              <item row="3" column="1">
-              <widget class="QLineEdit" name="Copper_Reading">
+              <widget class="QLineEdit" name="Lower_Reference_Front">
                <property name="alignment">
                 <set>Qt::AlignCenter</set>
                </property>
@@ -231,31 +238,14 @@
               </widget>
              </item>
              <item row="4" column="0">
-              <widget class="QLabel" name="label_7">
-               <property name="text">
-                <string>Copper Reference</string>
-               </property>
-              </widget>
-             </item>
-             <item row="4" column="1">
-              <widget class="QLineEdit" name="Copper_Reference">
-               <property name="alignment">
-                <set>Qt::AlignCenter</set>
-               </property>
-               <property name="readOnly">
-                <bool>true</bool>
-               </property>
-              </widget>
-             </item>
-             <item row="5" column="0">
               <widget class="QLabel" name="label_4">
                <property name="text">
                 <string>Current Discrepancy</string>
                </property>
               </widget>
              </item>
-             <item row="5" column="1">
-              <widget class="QLineEdit" name="Current_Discrepancy">
+             <item row="4" column="1">
+              <widget class="QLineEdit" name="Current_Discrepancy_Front">
                <property name="alignment">
                 <set>Qt::AlignCenter</set>
                </property>
@@ -309,7 +299,7 @@
               </widget>
              </item>
              <item>
-              <widget class="QSpinBox" name="Camera_Shutter">
+              <widget class="QSpinBox" name="Camera_Shutter_Front">
                <property name="alignment">
                 <set>Qt::AlignCenter</set>
                </property>
@@ -335,14 +325,14 @@
            <item>
             <layout class="QHBoxLayout" name="horizontalLayout_5">
              <item>
-              <widget class="QLabel" name="Min_Silver">
+              <widget class="QLabel" name="Minimum_Distance_Front">
                <property name="text">
-                <string>Min. Silver</string>
+                <string>Minimum Distance</string>
                </property>
               </widget>
              </item>
              <item>
-              <widget class="QDoubleSpinBox" name="Front_Min_Silver">
+              <widget class="QDoubleSpinBox" name="Front_Min_Distance">
                <property name="alignment">
                 <set>Qt::AlignCenter</set>
                </property>
@@ -350,7 +340,34 @@
                 <string> mm</string>
                </property>
                <property name="maximum">
-                <double>1.000000000000000</double>
+                <double>3.000000000000000</double>
+               </property>
+               <property name="singleStep">
+                <double>0.020000000000000</double>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_9">
+             <item>
+              <widget class="QLabel" name="Maximum_Distance_Front">
+               <property name="text">
+                <string>Maximum Distance</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QDoubleSpinBox" name="Front_Max_Distance">
+               <property name="alignment">
+                <set>Qt::AlignCenter</set>
+               </property>
+               <property name="suffix">
+                <string> mm</string>
+               </property>
+               <property name="maximum">
+                <double>3.000000000000000</double>
                </property>
                <property name="singleStep">
                 <double>0.020000000000000</double>
@@ -366,8 +383,8 @@
              </property>
              <property name="sizeHint" stdset="0">
               <size>
-               <width>20</width>
-               <height>40</height>
+               <width>17</width>
+               <height>51</height>
               </size>
              </property>
             </spacer>
@@ -384,28 +401,62 @@
        </layout>
       </item>
       <item>
-       <layout class="QVBoxLayout" name="verticalLayout_6">
+       <layout class="QVBoxLayout" name="verticalLayout_2">
         <item>
-         <layout class="QVBoxLayout" name="verticalLayout_2">
-          <item>
-           <widget class="QGroupBox" name="Back_Controls">
-            <property name="title">
-             <string>Back Camera</string>
-            </property>
-            <layout class="QVBoxLayout" name="verticalLayout_4">
-             <item>
-              <widget class="QLineEdit" name="Back_Result">
-               <property name="minimumSize">
-                <size>
-                 <width>0</width>
-                 <height>50</height>
-                </size>
+         <widget class="QGroupBox" name="Back_Controls">
+          <property name="title">
+           <string>Back Camera</string>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayout_3">
+           <item>
+            <widget class="QLineEdit" name="Back_Result">
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>50</height>
+              </size>
+             </property>
+             <property name="font">
+              <font>
+               <pointsize>16</pointsize>
+              </font>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignCenter</set>
+             </property>
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <layout class="QFormLayout" name="formLayout_2">
+             <property name="fieldGrowthPolicy">
+              <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+             </property>
+             <item row="0" column="0">
+              <widget class="QLabel" name="label_8">
+               <property name="text">
+                <string>Upper Reading</string>
                </property>
-               <property name="font">
-                <font>
-                 <pointsize>16</pointsize>
-                </font>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="QLineEdit" name="Upper_Reading_Back">
+               <property name="alignment">
+                <set>Qt::AlignCenter</set>
                </property>
+              </widget>
+             </item>
+             <item row="1" column="0">
+              <widget class="QLabel" name="label_9">
+               <property name="text">
+                <string>Upper Reference</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="1">
+              <widget class="QLineEdit" name="Upper_Reference_Back">
                <property name="alignment">
                 <set>Qt::AlignCenter</set>
                </property>
@@ -414,179 +465,191 @@
                </property>
               </widget>
              </item>
-             <item>
-              <layout class="QFormLayout" name="formLayout_2">
-               <property name="fieldGrowthPolicy">
-                <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
-               </property>
-               <item row="0" column="0">
-                <widget class="QLabel" name="label_6">
-                 <property name="text">
-                  <string>Back Type</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="0" column="1">
-                <widget class="QComboBox" name="Back_Type"/>
-               </item>
-               <item row="1" column="0">
-                <widget class="QLabel" name="label_8">
-                 <property name="text">
-                  <string>Silver Reading</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="1" column="1">
-                <widget class="QLineEdit" name="Silver_Reading_Back">
-                 <property name="alignment">
-                  <set>Qt::AlignCenter</set>
-                 </property>
-                </widget>
-               </item>
-               <item row="2" column="0">
-                <widget class="QLabel" name="label_9">
-                 <property name="text">
-                  <string>Silver Reference</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="2" column="1">
-                <widget class="QLineEdit" name="Silver_Reference_Back">
-                 <property name="alignment">
-                  <set>Qt::AlignCenter</set>
-                 </property>
-                 <property name="readOnly">
-                  <bool>true</bool>
-                 </property>
-                </widget>
-               </item>
-               <item row="3" column="0">
-                <widget class="QLabel" name="label_10">
-                 <property name="text">
-                  <string>Copper Reading</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="3" column="1">
-                <widget class="QLineEdit" name="Copper_Reading_Back">
-                 <property name="alignment">
-                  <set>Qt::AlignCenter</set>
-                 </property>
-                 <property name="readOnly">
-                  <bool>true</bool>
-                 </property>
-                </widget>
-               </item>
-               <item row="4" column="0">
-                <widget class="QLabel" name="label_11">
-                 <property name="text">
-                  <string>Copper Reference</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="4" column="1">
-                <widget class="QLineEdit" name="Copper_Reference_Back">
-                 <property name="alignment">
-                  <set>Qt::AlignCenter</set>
-                 </property>
-                 <property name="readOnly">
-                  <bool>true</bool>
-                 </property>
-                </widget>
-               </item>
-               <item row="5" column="0">
-                <widget class="QLabel" name="label_12">
-                 <property name="text">
-                  <string>Current Discrepancy</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="5" column="1">
-                <widget class="QLineEdit" name="Current_Discrepancy_Back">
-                 <property name="alignment">
-                  <set>Qt::AlignCenter</set>
-                 </property>
-                 <property name="readOnly">
-                  <bool>true</bool>
-                 </property>
-                </widget>
-               </item>
-              </layout>
-             </item>
-             <item>
-              <widget class="QPushButton" name="Back_Learn">
+             <item row="2" column="0">
+              <widget class="QLabel" name="label_10">
                <property name="text">
-                <string>Learn Back Colors</string>
+                <string>Lower Reading</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="1">
+              <widget class="QLineEdit" name="Lower_Reading_Back">
+               <property name="alignment">
+                <set>Qt::AlignCenter</set>
+               </property>
+               <property name="readOnly">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="0">
+              <widget class="QLabel" name="label_11">
+               <property name="text">
+                <string>Lower Reference</string>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="1">
+              <widget class="QLineEdit" name="Lower_Reference_Back">
+               <property name="alignment">
+                <set>Qt::AlignCenter</set>
+               </property>
+               <property name="readOnly">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item row="4" column="0">
+              <widget class="QLabel" name="label_12">
+               <property name="text">
+                <string>Current Discrepancy</string>
+               </property>
+              </widget>
+             </item>
+             <item row="4" column="1">
+              <widget class="QLineEdit" name="Current_Discrepancy_Back">
+               <property name="alignment">
+                <set>Qt::AlignCenter</set>
+               </property>
+               <property name="readOnly">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <widget class="QPushButton" name="Back_Learn">
+             <property name="text">
+              <string>Learn Back Colors</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_14">
+             <property name="text">
+              <string>Locator Sensitivity</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSlider" name="Back_Threshold">
+             <property name="minimum">
+              <number>100</number>
+             </property>
+             <property name="maximum">
+              <number>255</number>
+             </property>
+             <property name="value">
+              <number>200</number>
+             </property>
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_12">
+             <item>
+              <widget class="QLabel" name="label_19">
+               <property name="text">
+                <string>Camera Shutter</string>
                </property>
               </widget>
              </item>
              <item>
-              <widget class="QLabel" name="label_14">
-               <property name="text">
-                <string>Locator Sensitivity</string>
+              <widget class="QSpinBox" name="Camera_Shutter_Back">
+               <property name="alignment">
+                <set>Qt::AlignCenter</set>
                </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QSlider" name="Back_Threshold">
+               <property name="suffix">
+                <string> us</string>
+               </property>
                <property name="minimum">
                 <number>100</number>
                </property>
                <property name="maximum">
-                <number>255</number>
+                <number>50000</number>
+               </property>
+               <property name="singleStep">
+                <number>20</number>
                </property>
                <property name="value">
                 <number>200</number>
                </property>
-               <property name="orientation">
-                <enum>Qt::Horizontal</enum>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_10">
+             <item>
+              <widget class="QLabel" name="Minimum_Distance_Front_2">
+               <property name="text">
+                <string>Minimum Distance</string>
                </property>
               </widget>
              </item>
              <item>
-              <layout class="QHBoxLayout" name="horizontalLayout_6">
-               <item>
-                <widget class="QLabel" name="label_16">
-                 <property name="text">
-                  <string>Min. Silver</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QDoubleSpinBox" name="Back_Min_Silver">
-                 <property name="alignment">
-                  <set>Qt::AlignCenter</set>
-                 </property>
-                 <property name="suffix">
-                  <string> mm</string>
-                 </property>
-                 <property name="maximum">
-                  <double>1.000000000000000</double>
-                 </property>
-                 <property name="singleStep">
-                  <double>0.020000000000000</double>
-                 </property>
-                </widget>
-               </item>
-              </layout>
-             </item>
-             <item>
-              <spacer name="verticalSpacer_2">
-               <property name="orientation">
-                <enum>Qt::Vertical</enum>
+              <widget class="QDoubleSpinBox" name="Back_Min_Distance">
+               <property name="alignment">
+                <set>Qt::AlignCenter</set>
                </property>
-               <property name="sizeHint" stdset="0">
-                <size>
-                 <width>20</width>
-                 <height>40</height>
-                </size>
+               <property name="suffix">
+                <string> mm</string>
                </property>
-              </spacer>
+               <property name="maximum">
+                <double>3.000000000000000</double>
+               </property>
+               <property name="singleStep">
+                <double>0.020000000000000</double>
+               </property>
+              </widget>
              </item>
             </layout>
-           </widget>
-          </item>
-         </layout>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_11">
+             <item>
+              <widget class="QLabel" name="Minimum_Distance_Front_3">
+               <property name="text">
+                <string>Minimum Distance</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QDoubleSpinBox" name="Back_Max_Distance">
+               <property name="alignment">
+                <set>Qt::AlignCenter</set>
+               </property>
+               <property name="suffix">
+                <string> mm</string>
+               </property>
+               <property name="maximum">
+                <double>3.000000000000000</double>
+               </property>
+               <property name="singleStep">
+                <double>0.020000000000000</double>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <spacer name="verticalSpacer_2">
+             <property name="orientation">
+              <enum>Qt::Vertical</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>20</width>
+               <height>40</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
+         </widget>
         </item>
        </layout>
       </item>
@@ -829,14 +892,6 @@
     </property>
     <addaction name="actionQuit"/>
    </widget>
-   <widget class="QMenu" name="menuCamera">
-    <property name="title">
-     <string>Cameras</string>
-    </property>
-    <addaction name="actionEnable_Front_Camera_2"/>
-    <addaction name="actionEnable_Back_Camera"/>
-   </widget>
-   <addaction name="menuCamera"/>
    <addaction name="menuControls"/>
    <addaction name="menuData_Record"/>
    <addaction name="menuExit"/>
@@ -905,47 +960,6 @@
    </property>
    <property name="statusTip">
     <string>Bypass fail inspection results. Fail alarm will not be triggered if this is checked.</string>
-   </property>
-  </action>
-  <action name="actionEnable_Front_Camera">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Enable Front Camera</string>
-   </property>
-  </action>
-  <action name="actionEnable_Back_camera">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Enable Back Camera</string>
-   </property>
-  </action>
-  <action name="actionEnable_Front_Camera_2">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Use Front Camera</string>
-   </property>
-  </action>
-  <action name="actionEnable_Back_Camera">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="enabled">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Use Back Camera</string>
    </property>
   </action>
   <action name="actionClear_Alarm">

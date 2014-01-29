@@ -1,5 +1,6 @@
 #include "Measurement.h"
 #include <QSettings>
+#include <QDebug>
 
 
 Measurement::Measurement(void)
@@ -54,16 +55,16 @@ bool Measurement::Load_Settings(int index, QString filename)
 	is[index].roi_y_offset_height= set.value("ROI/Y_Offset_Height").toDouble(&ok);
 	if (!ok) return false;
 
-	is[index].silver_h = set.value("Colors/Silver_H").toDouble(&ok);
+    is[index].upper_h = set.value("Colors/Upper_H").toDouble(&ok);
 	if (!ok) return false;
 
-	is[index].silver_s = set.value("Colors/Silver_S").toDouble(&ok);
+    is[index].upper_s = set.value("Colors/Upper_S").toDouble(&ok);
 	if (!ok) return false;
 
-	is[index].copper_h = set.value("Colors/Copper_H").toDouble(&ok);
+    is[index].lower_h = set.value("Colors/Lower_H").toDouble(&ok);
 	if (!ok) return false;
 
-	is[index].copper_s = set.value("Colors/Copper_S").toDouble(&ok);
+    is[index].lower_s = set.value("Colors/Lower_S").toDouble(&ok);
 	if (!ok) return false;
 
 	is[index].mapping_ratio = set.value("Mapping/Ratio").toDouble(&ok);
@@ -72,14 +73,25 @@ bool Measurement::Load_Settings(int index, QString filename)
 	is[index].locator_threshold = set.value("Locator/Threshold").toInt(&ok);
 	if (!ok) return false;
 
-	is[index].min_silver = set.value("Decision/Min_Silver").toDouble(&ok);
+    is[index].min_distance = set.value("Decision/Min_Distance").toDouble(&ok);
 	if (!ok) return false;
+
+    is[index].max_distance = set.value("Decision/Max_Distance").toDouble(&ok);
+    if (!ok) return false;
 
 	is[index].fail_threshold = set.value("Decision/Fail_Threshold").toInt(&ok);
 	if (!ok) return false;
 
 	is[index].camera_shutter = set.value("Camera/Shutter").toInt(&ok);
 	if (!ok) return false;
+
+    is[index].camera_gain = set.value("Camera/Gain").toInt(&ok);
+    if (!ok) return false;
+
+    is[index].vertical_flip = set.value("Process/Vertical_Flip").toInt(&ok);
+    if (!ok) return false;
+
+    qDebug() << "Loaded settings for:" << name;
 
 	return true;
 }
@@ -103,13 +115,14 @@ bool Measurement::Save_Settings(int index, QString filename)
 	set.setValue("ROI/Width_Reduction",is[index].roi_width_reduction);
 	set.setValue("ROI/Y_Offset",is[index].roi_y_offset);
 	set.setValue("ROI/Y_Offset_Height",is[index].roi_y_offset_height);
-	set.setValue("Colors/Silver_H", is[index].silver_h);
-	set.setValue("Colors/Silver_S",is[index].silver_s);
-	set.setValue("Colors/Copper_H",is[index].copper_h);
-	set.setValue("Colors/Copper_S",is[index].copper_s );
+    set.setValue("Colors/Upper_H", is[index].upper_h);
+    set.setValue("Colors/Upper_S",is[index].upper_s);
+    set.setValue("Colors/Lower_H",is[index].lower_h);
+    set.setValue("Colors/Lower_S",is[index].lower_s );
 	set.setValue("Mapping/Ratio", is[index].mapping_ratio);
 	set.setValue("Locator/Threshold", is[index].locator_threshold);
-	set.setValue("Decision/Min_Silver", is[index].min_silver);
+    set.setValue("Decision/Min_Distance", is[index].min_distance);
+    set.setValue("Decision/Max_Distance", is[index].max_distance);
 	set.setValue("Decision/Fail_Threshold", is[index].fail_threshold);
 	set.setValue("Camera/Shutter", is[index].camera_shutter);
 
@@ -120,48 +133,20 @@ bool Measurement::Save_Settings(int index, QString filename)
 
 }
 
-bool Measurement::Perform_Extraction(int index, int locator_threshold)
+bool Measurement::Perform_Extraction(int calculated_index)
 {
-	switch (index)
-	{
-		case C1_FRONT:
-		{
-			if (Perform_C1_Front(locator_threshold))
-			{
-				return true;
-			}
-			else
-			{
-				return false;
-			}
-			
-		}
-		case C2_FRONT:
-		{
-			if (Perform_C2_Front(locator_threshold))
-			{
-				return true;
-			}
-			else
-			{
-				return false;
-			}
-			
-		}
-		case C3_FRONT:
-		{
-			if (Perform_C3_Front(locator_threshold))
-			{
-				return true;
-			}
-			else
-			{
-				return false;
-			}
-		}
-		default:
-			return false;
-	}
+    int locator_threshold = is[calculated_index].locator_threshold;
+
+    // default method for now
+    if ( Calculate_By_Locator_Method(calculated_index, locator_threshold) )
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+
 }
 
 bool Measurement::Perform_C1_Front(int thresh)
@@ -523,7 +508,7 @@ void Measurement::Calculate_Reference_HS(Rect roi, double* low_h, double* low_s,
 
 }
 
-int Measurement::Calculate_HS_Transition(int index, Rect roi, int avg_row)
+int Measurement::Calculate_HS_Transition(int calculated_index, Rect roi, int avg_row)
 {
 	Mat h_roi = hsv[0](roi);
 	Mat s_roi = hsv[1](roi);
@@ -535,8 +520,8 @@ int Measurement::Calculate_HS_Transition(int index, Rect roi, int avg_row)
 	QList<int> y_list;
 	QList<double> h_list;
 	QList<double> s_list;
-	QList<double> silver_dist;
-	QList<double> copper_dist;
+    QList<double> upper_dist;
+    QList<double> lower_dist;
 
 	for (int y=h_roi.rows-1; y>=avg_row-1; y--)
 	{
@@ -561,8 +546,8 @@ int Measurement::Calculate_HS_Transition(int index, Rect roi, int avg_row)
 
 		// calculate distances
 
-		silver_dist.append(sqrt( (avg_h-is[index].silver_h)*(avg_h-is[index].silver_h) + (avg_s-is[index].silver_s)*(avg_s-is[index].silver_s)));
-		copper_dist.append(sqrt( (avg_h-is[index].copper_h)*(avg_h-is[index].copper_h) + (avg_s-is[index].copper_s)*(avg_s-is[index].copper_s)));
+        upper_dist.append(sqrt( (avg_h-is[calculated_index].upper_h)*(avg_h-is[calculated_index].upper_h) + (avg_s-is[calculated_index].upper_s)*(avg_s-is[calculated_index].upper_s)));
+        lower_dist.append(sqrt( (avg_h-is[calculated_index].lower_h)*(avg_h-is[calculated_index].lower_h) + (avg_s-is[calculated_index].lower_s)*(avg_s-is[calculated_index].lower_s)));
 	}
 
     // attempt to find a y value in which HS coordinate is closer to the the silver than copper and use that as the transition value
@@ -571,8 +556,8 @@ int Measurement::Calculate_HS_Transition(int index, Rect roi, int avg_row)
 	{
         //qDebug("%f %f", silver_dist[i], copper_dist[i]);
 
-		// if color is closer to silver, than treat it as silver
-		if (silver_dist[i] < copper_dist[i])
+        // if color is closer to upper color, than treat it as the upper color
+        if (upper_dist[i] < lower_dist[i])
 		{
             //qDebug("%d, %d", i, y_list[i]);
 			return y_list[i];
@@ -598,9 +583,6 @@ int Measurement::Calculate_HS_Transition(int index, Rect roi, int avg_row)
 	qf.close();
 	*/
 	return true;
-
-
-
 
 }
 
@@ -1262,7 +1244,341 @@ bool Measurement::Perform_C3_Front(int thresh)
 	line(front_roi_color, Point(0, transition_list[size]), Point(front_roi_s.cols, transition_list[size]), Scalar(0,0,255), 1);
 
 	result[0] = CAL_OK;
-	return true;
+    return true;
+}
+
+bool Measurement::Calculate_By_Locator_Method(int calculated_index, int thresh)
+{
+    if (is[calculated_index].vertical_flip)
+    {
+        flip(internal_image, internal_image, 0);  // flip around x axs
+    }
+
+    result_image = internal_image.clone();
+
+    // check if need to vertical flip the image
+
+
+
+    // swap r and b channel
+    cvtColor(internal_image, internal_image, CV_RGB2BGR);
+
+    GaussianBlur(internal_image, internal_image, Size(is[calculated_index].kernel,is[calculated_index].kernel), is[calculated_index].sigma);
+
+    Mat element = getStructuringElement(MORPH_RECT, Size(3,3));
+
+    for (int i=0; i<is[calculated_index].pre_morph_count; i++)
+    {
+        dilate(internal_image, internal_image, element);
+    }
+
+    for (int i=0; i<is[calculated_index].pre_morph_count; i++)
+    {
+        erode(internal_image, internal_image, element);
+    }
+
+
+    //imwrite("filtered1.bmp", internal_image);
+
+    QString min_string = QString("Min: %1 x %2").arg(is[calculated_index].locator_width*(1-is[calculated_index].length_tolerance)).arg(is[calculated_index].locator_height*(1-is[calculated_index].length_tolerance));
+    QString max_string = QString("Max: %1 x %2").arg(is[calculated_index].locator_width*(1+is[calculated_index].length_tolerance)).arg(is[calculated_index].locator_height*(1+is[calculated_index].length_tolerance));
+
+    putText(result_image, "Locator Search" , Point(0, 1090), 0, 1, Scalar(255,0,0), 2);
+    putText(result_image, min_string.toStdString(), Point(0, 1140), 0,1, Scalar(255,0,0), 2);
+    putText(result_image, max_string.toStdString(), Point(0, 1190), 0,1, Scalar(255,0,0), 2);
+
+    // draw locator search size to make easy for locator size tuning
+
+    Rect small_rect(500, 1130, is[calculated_index].locator_width*(1-is[calculated_index].length_tolerance) , is[calculated_index].locator_height*(1-is[calculated_index].length_tolerance));
+    Rect big_rect(650, 1130, is[calculated_index].locator_width*(1+is[calculated_index].length_tolerance) , is[calculated_index].locator_height*(1+is[calculated_index].length_tolerance));
+
+    rectangle(result_image, small_rect, Scalar(255, 255, 255), -1);
+    rectangle(result_image, big_rect, Scalar(255, 255, 255), -1);
+
+
+    // first use locator condition to pinpoint connectors
+
+    Mat internal_image_gray;
+    cvtColor(internal_image, internal_image_gray, CV_RGB2GRAY);
+
+    //imwrite("thresh.bmp", internal_image_gray);
+
+    threshold(internal_image_gray, internal_image_gray, thresh, 255, CV_THRESH_BINARY);
+
+    vector<vector<Point>> contours;
+    vector<Vec4i> hierarchy;
+
+    findContours(internal_image_gray, contours, hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
+
+    // locate the contour which has the smallest y coordinate
+
+    QList<int> locator_candidates;
+
+    double area = 0;
+    Rect rect;
+    Rect min_y_rect;
+    int min_y = internal_image_gray.rows;
+    int min_y_index = 0;
+    int min_index = 0;
+
+    for (int i=0; i<contours.size(); i++)
+    {
+        // filter out small area contours
+        area = contourArea(contours[i]);
+
+        if (area > is[calculated_index].minimum_area)
+        {
+            locator_candidates.append(i);
+
+        }
+    }
+
+    // check if there are any valid contours at all
+    if (locator_candidates.size() == 0)
+    {
+        result[0] = NO_LOCATOR;
+        return false;
+    }
+
+    // there will be at least 1 valid contours for considers at this point
+
+    bool is_min_y_rect_valid;
+
+    // search for min_y rect which satisfy size criteria
+    do
+    {
+        min_y = internal_image_gray.rows;
+
+        for (int i=0; i<locator_candidates.size(); i++)
+        {
+            rect = boundingRect(contours[locator_candidates[i]]);
+
+            if (rect.y < min_y)
+            {
+                min_y = rect.y;
+                min_y_index = locator_candidates[i];
+                min_y_rect = rect;
+                min_index = i;
+            }
+        }
+
+        is_min_y_rect_valid = (min_y_rect.width > ( is[calculated_index].locator_width * (1-is[calculated_index].length_tolerance))) &&
+                                (min_y_rect.width < ( is[calculated_index].locator_width * (1 +  is[calculated_index].length_tolerance))) &&
+                                (min_y_rect.height > ( is[calculated_index].locator_height * (1-is[calculated_index].length_tolerance))) &&
+                                (min_y_rect.height < ( is[calculated_index].locator_height * (1 +  is[calculated_index].length_tolerance)))  ;
+
+        if (!is_min_y_rect_valid)
+        {
+            locator_candidates.removeAt(min_index);
+        }
+
+        if (locator_candidates.size() == 0)
+        {
+            result[0] = LOCATOR_INVALID;
+            return false;
+        }
+
+    } while (!is_min_y_rect_valid);
+
+    double min_area = contourArea(contours[min_y_index]);
+
+    drawContours(result_image, contours, min_y_index, Scalar(0,255,0), 2, 8);
+    rectangle(result_image, min_y_rect, Scalar(255,0,0),2);
+    // show width, length and area
+    QString width_text = QString("Minimum-Y Width: %1, Height: %2, Area: %3").arg(min_y_rect.width).arg(min_y_rect.height).arg(min_area);
+    putText(result_image, width_text.toStdString(), Point(5,40), 0, 1, Scalar(255,0,0), 2);
+
+    putText(result_image, "Locator Found", Point(min_y_rect.x, min_y_rect.y-90), 0, 1, Scalar(255,0,0), 2);
+
+    // min_y_rect is locator bounding box at this point
+    // next find all contours which have similar y coordinates and length ratios
+
+    line(result_image, Point(0, min_y_rect.y - is[calculated_index].locator_level_tolerance), Point(result_image.cols, min_y_rect.y - is[calculated_index].locator_level_tolerance), Scalar(255,0,0), 2);
+    line(result_image, Point(0, min_y_rect.y + is[calculated_index].locator_level_tolerance), Point(result_image.cols, min_y_rect.y + is[calculated_index].locator_level_tolerance), Scalar(255,0,0), 2);
+
+
+    QList<int> connector_tops;
+    QList<Rect> connector_tops_rects;
+
+    QString index_string;
+    QString area_string;
+    double temp_area;
+
+    for (int i=0; i< locator_candidates.size(); i++)
+    {
+        rect = boundingRect(contours[locator_candidates[i]]);
+
+        if (	(rect.y > (min_y_rect.y - is[calculated_index].locator_level_tolerance)) &&
+                (rect.y < (min_y_rect.y + is[calculated_index].locator_level_tolerance))  &&
+                (rect.width > ( is[calculated_index].locator_width * (1-is[calculated_index].length_tolerance))) &&
+                (rect.width < ( is[calculated_index].locator_width * (1 +  is[calculated_index].length_tolerance))) )
+                //(rect.height > ( is[calculated_index].locator_height * is[calculated_index].length_tolerance)) &&
+                //(rect.height < ( is[calculated_index].locator_height * 1 /  is[calculated_index].length_tolerance)) )
+
+        {
+            connector_tops.append(locator_candidates[i]);
+            connector_tops_rects.append(rect);
+
+            area = contourArea(contours[locator_candidates[i]]);
+
+            rectangle(result_image, rect, Scalar(0,0,255),2);
+            index_string = QString("%1").arg(connector_tops.size());
+            area_string = QString("%2").arg(area);
+            putText(result_image, index_string.toStdString(), Point(rect.x, rect.y-50), 0, 1, Scalar(0,0,255), 2);
+            putText(result_image, area_string.toStdString(), Point(rect.x, rect.y-10), 0, 1, Scalar(0,0,255), 2);
+
+        }
+    }
+
+    // Now connector tops contain all contour indices that are needed for inspection
+
+
+    cvtColor(internal_image, image_hsv, CV_BGR2HSV);
+    split(image_hsv, hsv);
+
+    // Now, construct a list of roi's
+
+    QList<Rect> inspections_roi;
+
+    int temp;
+
+    Rect roi;
+
+    for (int i=0; i<connector_tops_rects.size(); i++)
+    {
+        // make sure roi width is multiples of 4
+        temp = connector_tops_rects[i].width * is[calculated_index].roi_width_reduction;
+        temp = temp - (temp % 4);
+
+        roi.width = temp;
+        roi.height = is[calculated_index].roi_y_offset_height;
+        roi.y = connector_tops_rects[i].y + is[calculated_index].roi_y_offset;
+        roi.x = connector_tops_rects[i].x + ((double) connector_tops_rects[i].width) * (1-is[calculated_index].roi_width_reduction) / 2.0;
+
+        // make sure roi is valid inside image
+        if  ( ((roi.x + roi.width) < internal_image.cols) &&
+              ((roi.y + roi.height) < internal_image.rows) )
+        {
+            inspections_roi.append(roi);
+        }
+    }
+
+    if ( inspections_roi.size() == 0)
+    {
+        result[0] = ROI_INVALID;
+        return false;
+    }
+
+    // now perform morph for all roi
+
+    Mat temp_h;
+    Mat temp_s;
+
+    for (int i=0; i<inspections_roi.size(); i++)
+    {
+        temp_h = hsv[0](inspections_roi[i]);
+        temp_s = hsv[1](inspections_roi[i]);
+
+        GaussianBlur(temp_h, temp_h, Size(3,3), 3);
+        GaussianBlur(temp_s, temp_s, Size(3,3), 3);
+
+        for (int j=0; j<5; j++)
+        {
+            dilate(temp_h, temp_h, element);
+            dilate(temp_s, temp_s, element);
+        }
+
+        for (int j=0; j<3; j++)
+        {
+            //erode(temp_h, temp_h, element);
+            //erode(temp_s, temp_s, element);
+        }
+
+    }
+
+    // use the last in the list as display
+    int size = inspections_roi.size() - 1;
+
+    rectangle(result_image, inspections_roi[size], Scalar(0,0,255),2);
+
+    for (int i=0; i<size; i++)
+    {
+        rectangle(result_image, inspections_roi[i], Scalar(0,255,0),2);
+    }
+
+    /////////////////////////////////////////////////////////////////////////////////////
+
+    double low_h, low_s, high_h, high_s;
+
+    Calculate_Reference_HS(inspections_roi[size], &low_h, &low_s, &high_h, &high_s, 3);
+
+    result[1] = low_h;
+    result[2] = low_s;
+    result[3] = high_h;
+    result[4] = high_s;
+
+    // Calculate color discrepancy for current image
+    /////////////////////////////////////////////////////////////////////////////////
+
+    double max_dis = sqrt(180.0*180.0+255.0*255.0);
+    double current_dis = sqrt( (low_h-high_h)*(low_h-high_h) + (low_s-high_s)*(low_s-high_s) ) / max_dis;
+
+    // fill in some results
+    result[5] = current_dis;
+
+    QList<int> transition_list;
+
+    for (int i=0; i<inspections_roi.size(); i++)
+    {
+        transition_list.append(Calculate_HS_Transition(calculated_index, inspections_roi[i], 3));
+    }
+
+    // draw transition lines
+
+    int actual_y;
+
+    for (int i=0; i<transition_list.size(); i++)
+    {
+        actual_y = inspections_roi[i].y + transition_list[i];
+        line(result_image, Point(inspections_roi[i].x, actual_y), Point(inspections_roi[i].x+inspections_roi[i].width, actual_y), Scalar(255,0,0), 2);
+    }
+    ////////////////////////////////////////////////////////////////////////
+
+    // fill in measurement results
+
+    result[6] = inspections_roi.size();
+
+    double length;
+    double sum = 0.0;
+
+    for (int i=0; i<inspections_roi.size(); i++)
+    {
+        // calculate total length using top references
+
+        length = is[calculated_index].roi_y_offset + transition_list[i];
+        result[i+7] = length * is[calculated_index].mapping_ratio;
+        sum = sum + length * is[calculated_index].mapping_ratio;
+    }
+
+    // Also calculate the average height for reference
+
+    result[7+inspections_roi.size()] = sum /inspections_roi.size();
+
+    front_roi_color = internal_image(inspections_roi[size]).clone();
+    front_roi_h = hsv[0](inspections_roi[size]);
+    front_roi_s = hsv[1](inspections_roi[size]);
+
+    cvtColor(front_roi_h, front_roi_h, CV_GRAY2RGB);
+    cvtColor(front_roi_s, front_roi_s, CV_GRAY2RGB);
+    cvtColor(front_roi_color, front_roi_color, CV_BGR2RGB);
+
+    line(front_roi_h, Point(0, transition_list[size]), Point(front_roi_h.cols, transition_list[size]), Scalar(0,0,255), 1);
+    line(front_roi_s, Point(0, transition_list[size]), Point(front_roi_s.cols, transition_list[size]), Scalar(0,0,255), 1);
+    line(front_roi_color, Point(0, transition_list[size]), Point(front_roi_s.cols, transition_list[size]), Scalar(0,0,255), 1);
+
+
+    result[0] = CAL_OK;
+    return true;
 }
 
 bool Measurement::Set_Image(Mat image)

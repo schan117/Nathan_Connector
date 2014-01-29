@@ -36,15 +36,18 @@ struct Inspection_Settings
 	double roi_width_reduction;
 	int roi_y_offset;
 	int roi_y_offset_height;
-	double silver_h;
-	double silver_s;
-	double copper_h;
-	double copper_s;
+    double upper_h;
+    double upper_s;
+    double lower_h;
+    double lower_s;
 	double mapping_ratio;
 	int locator_threshold;
-	double min_silver;
+    double min_distance;
+    double max_distance;
 	int fail_threshold;
 	int camera_shutter;
+    int camera_gain;
+    int vertical_flip;
 
 	Inspection_Settings()
 	{
@@ -59,15 +62,18 @@ struct Inspection_Settings
 		roi_width_reduction = 0.0;
 		roi_y_offset = 0;
 		roi_y_offset_height = 0;
-		silver_h = 0;
-		silver_s = 0;
-	    copper_h = 0;
-	    copper_s = 0;
+        upper_h = 0;
+        upper_s = 0;
+        lower_h = 0;
+        lower_s = 0;
 		mapping_ratio = 0.0;
 		locator_threshold = 0;
-		min_silver = 0;
+        min_distance = 0;
+        max_distance = 0;
 		fail_threshold = 0;
 		camera_shutter = 0;
+        camera_gain = 0;
+        vertical_flip = 0;
 
 
 	}
@@ -86,7 +92,7 @@ public:
 	bool Save_Settings(int index, QString filename);
 	bool Set_Image(Mat image);
 
-	bool Perform_Extraction(int index, int locator_threshold);
+    bool Perform_Extraction(int calculated_index);
 	
 	Mat result_image;
 	Mat internal_image;
@@ -108,10 +114,9 @@ private:
 	bool Perform_C2_Front(int thresh);
 	bool Perform_C3_Front(int thresh);
 
+    bool Calculate_By_Locator_Method(int calculated_index, int thresh);
+
 	void Calculate_Reference_HS(Rect roi, double* low_h, double* low_s, double* high_h, double* high_s, int avg_row);
-	int Calculate_HS_Transition(int index, Rect roi, int avg_row);
-
-
-
+    int Calculate_HS_Transition(int calculated_index, Rect roi, int avg_row);
 };
 

@@ -1,5 +1,6 @@
 #include "Vimba_Wrapper.h"
 #include <QSettings>
+#include <QDebug>
 
 namespace AVT {
 namespace VmbAPI {
@@ -121,14 +122,14 @@ bool Vimba_Wrapper::Open_Cameras()
 	cameras = new CameraPtr[cameras_to_open];
 	FeaturePtr feature;
 
-	for (int i=0; i<cameras_to_open; i++)
+    for (int i=0; i<cameras_to_open; i++)
 	{
-        qDebug("Attempt to open: %s", id_list[i].toStdString().c_str());
+        qDebug() << "Attempt to open:" <<  id_list[i];
 		res = m_system.OpenCameraByID( id_list[i].toStdString().c_str(), VmbAccessModeFull, cameras[i] );
 
 		if (res == VmbErrorSuccess)
 		{
-            qDebug("	Succeeded! Register frame callback for camera index: %d", i);
+            qDebug("    Succeeded! Register frame callback for camera index: %d", i);
 			FrameObservers[i] = new FrameObserver( cameras[i] );
             FrameObservers[i]->index = i;
             QObject::connect(FrameObservers[i], SIGNAL(CallbackFinished(int)), this, SLOT(On_Callback_Finished(int)));
@@ -138,18 +139,30 @@ bool Vimba_Wrapper::Open_Cameras()
 			// change the camera to software to make sure that things are going to be cool
 
 			res = cameras[i]->GetFeatureByName("TriggerSource", feature);
-			res = feature->SetValue("Software");
+            res = feature->SetValue("Software");
 
 			if (res == VmbErrorSuccess)
 			{
-                qDebug("	Camera changed to software trigger mode!");
+                qDebug("    Camera changed to software trigger mode!");
 			}
 			else
 			{
-                qDebug("	Fail to change to software trigger mode!");
+                qDebug("    Fail to change to software trigger mode!");
 			}
 
+            // Also auto adjust packet size
 
+            res = cameras[i]->GetFeatureByName("GVSPAdjustPacketSize", feature);
+            res =feature->RunCommand();
+
+            if (res == VmbErrorSuccess)
+            {
+                qDebug() << "   Adjusted packet size!";
+            }
+            else
+            {
+                qDebug() << "   Fail to adjust packet size!";
+            }
 		}
 		else
 		{
@@ -257,6 +270,50 @@ bool Vimba_Wrapper::Set_Exposure(int camera_index, int value)
 
 }
 
+bool Vimba_Wrapper::Set_Gain(int camera_index, float value)
+{
+    FeaturePtr feature;
+    VmbErrorType res;
+
+    res = cameras[camera_index]->GetFeatureByName("Gain", feature);
+
+    if (res != VmbErrorSuccess)
+    {
+        return false;
+    }
+
+    res = feature->SetValue((float)value);
+
+    if (res != VmbErrorSuccess)
+    {
+        return false;
+    }
+
+    return true;
+}
+
+bool Vimba_Wrapper::Set_Image_Format(int camera_index, QString format)
+{
+    FeaturePtr feature;
+    VmbErrorType res;
+
+    res = cameras[camera_index]->GetFeatureByName("PixelFormat", feature);
+
+    if (res != VmbErrorSuccess)
+    {
+        return false;
+    }
+
+    res = feature->SetValue(format.toLatin1().constData());
+
+    if (res != VmbErrorSuccess)
+    {
+        return false;
+    }
+
+    return true;
+}
+
 bool Vimba_Wrapper::Transfer_Frame(int camera_index)
 {	
 	/*
@@ -328,6 +385,5 @@ void Vimba_Wrapper::On_Callback_Finished(int index)
 {
     emit Frame_Received(index);
 }
-
 
 }}

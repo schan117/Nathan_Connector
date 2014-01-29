@@ -16,20 +16,22 @@ MainWindow::MainWindow(QWidget *parent) :
 
     this->setWindowTitle(tr("Connector Inspection Terminal"));
 
-        learn_color_on_next_capture = false;
+        learn_front_color_on_next_capture = false;
+        learn_back_color_on_next_capture = false;
         front_inspection_count = 0;
         front_cycle_count;
         actual_count = 0;
         ready_and_do_data_logging = false;
-        consecutive_fail = 0;
-        prev_result = true;
+        front_consecutive_fail = 0;
+        back_consecutive_fail = 0;
+        front_prev_result = true;
+        back_prev_result = true;
         product_count = 0;
         bypass_result = false;
-        fail_alarmed = false;
+        front_fail_alarmed = false;
+        back_fail_alarmed  = false;
 
         qDebug() << "Load Product Settings returns:" << Load_Settings();
-
-        Disable_Back_Camera_Controls();
 
         Connect_Signals();
 
@@ -119,36 +121,17 @@ MainWindow::MainWindow(QWidget *parent) :
             // load in default meaurement settings for front
             if (load_ok)
             {
-                // check which camera status, whether they are opened properly
-
-
+                // check if both front and back camera are found
                 if (vw.cameras_opened == 2)
                 {
-                    // display front camera controls as an default
-                    ui->actionEnable_Front_Camera_2->setChecked(true);
 
 
-                    if (vw.found_list[0] == 1 && vw.found_list[1] == 0)
-                    {
-                        ui->actionEnable_Front_Camera_2->setChecked(true);
-                        ui->actionEnable_Back_Camera->setEnabled(false);
-                    }
-                    else if (vw.found_list[0] == 0 && vw.found_list[1] == 1)
-                    {
-                        ui->actionEnable_Back_Camera->setChecked(true);
-                        ui->actionEnable_Front_Camera_2->setEnabled(false);
-                    }
-
-                }
-                else if   (vw.cameras_opened == 1)
-                {
-                    ui->actionEnable_Front_Camera_2->setChecked(true);
-                    ui->actionEnable_Back_Camera->setEnabled(true);
                 }
 
                 // fill in reference color informations
+                Display_Settings(0);
 
-                Display_Front_Settings(C1_FRONT);
+
             }
             else
             {
@@ -214,15 +197,20 @@ MainWindow::~MainWindow()
 void MainWindow::Connect_Signals()
 {
     connect(&camera_thread, SIGNAL(FrameReceived(int)), this, SLOT(On_Frame_Received(int)));
-    connect(ui->Front_Type, SIGNAL(currentIndexChanged(int)), this, SLOT(On_Front_Type_Changed(int)));
-    connect(ui->Start, SIGNAL(clicked()), this, SLOT(On_Front_Start()));
-    connect(ui->Stop, SIGNAL(clicked()), this, SLOT(On_Front_Stop()));
+    connect(ui->Start, SIGNAL(clicked()), this, SLOT(On_Start()));
+    connect(ui->Stop, SIGNAL(clicked()), this, SLOT(On_Stop()));
     connect(ui->Front_Learn, SIGNAL(clicked()), this, SLOT(On_Front_Learn()));
+    connect(ui->Back_Learn, SIGNAL(clicked()), this, SLOT(On_Back_Learn()));
     connect(ui->actionDelay_Inspection, SIGNAL(triggered()), this, SLOT(On_Delay_State_Changed()));
     connect(ui->actionStart_Data_Logging, SIGNAL(toggled(bool)), this, SLOT(On_Action_Start_Data_Logging(bool)));
+
     connect(ui->Front_Threshold, SIGNAL(valueChanged(int)), this, SLOT(On_Front_Locator_Threshold_Changed(int)));
     connect(ui->Front_Threshold, SIGNAL(sliderReleased()), this, SLOT(On_Front_Locator_Threshold_Finished()));
-    connect(ui->Camera_Shutter, SIGNAL(valueChanged(int)), this, SLOT(On_Camera_Shutter_Changed(int)));
+    connect(ui->Back_Threshold, SIGNAL(valueChanged(int)), this, SLOT(On_Back_Locator_Threshold_Changed(int)));
+    connect(ui->Back_Threshold, SIGNAL(sliderReleased()), this, SLOT(On_Back_Locator_Threshold_Finished()));
+
+    connect(ui->Camera_Shutter_Front, SIGNAL(valueChanged(int)), this, SLOT(On_Front_Camera_Shutter_Changed(int)));
+    connect(ui->Camera_Shutter_Back, SIGNAL(valueChanged(int)), this, SLOT(On_Back_Camera_Shutter_Changed(int)));
 
     connect(ui->actionQuit, SIGNAL(triggered()), this, SLOT(On_Action_Quit()));
     connect(ui->actionSet_Output_Folder, SIGNAL(triggered()), this, SLOT(On_Action_Select_Output_Folder()));
@@ -234,13 +222,16 @@ void MainWindow::Connect_Signals()
 
     connect(ui->actionActual_Counter_Reset, SIGNAL(triggered()), this, SLOT(On_Action_Counter_Reset()));
 
-    connect(ui->Front_Min_Silver, SIGNAL(valueChanged(double)), this, SLOT(On_Front_Min_Silver_Changed(double)));
-
-    connect(ui->actionEnable_Front_Camera_2, SIGNAL(triggered()), this, SLOT(On_Front_Camera_State_Changed()));
-    connect(ui->actionEnable_Back_Camera, SIGNAL(triggered()), this, SLOT(On_Back_Camera_State_Changed()));
+    connect(ui->Front_Min_Distance, SIGNAL(valueChanged(double)), this, SLOT(On_Front_Min_Distance_Changed(double)));
+    connect(ui->Front_Max_Distance, SIGNAL(valueChanged(double)), this, SLOT(On_Front_Max_Distance_Changed(double)));
+    connect(ui->Back_Min_Distance, SIGNAL(valueChanged(double)), this, SLOT(On_Back_Min_Distance_Changed(double)));
+    connect(ui->Back_Max_Distance, SIGNAL(valueChanged(double)), this, SLOT(On_Back_Max_Distance_Changed(double)));
 
     connect(ui->actionBypass_Results, SIGNAL(triggered()), this, SLOT(On_Action_Bypass_Results()));
     connect(ui->actionClear_Alarm, SIGNAL(triggered()), this, SLOT(On_Action_Clear_Alarm()));
+
+    connect(ui->Product_Type, SIGNAL(currentIndexChanged(int)), this, SLOT(On_Product_Type_Changed(int)));
+
 }
 
 bool MainWindow::Initialize_Vimba_System()
@@ -291,95 +282,33 @@ void MainWindow::On_Frame_Received(int camera_index)
 
     int process_time;
 
+    QString current_product = ui->Product_Type->currentText();
+    int product_index = ui->Product_Type->findText(current_product);
+
+    // clear result window for every new inspection cycle
+     ui->Results->clear();
 
 
-    if (ui->Front_Type->currentIndex() == C1_FRONT)
+    // if reach here, either use_front or use_back is 1, BUT only one of them!!!
+
+    if (product_type[product_index].use_front)
     {
-        front_m.Set_Image(vw.internal_image_rgb[camera_index]);
+        measurement.Set_Image(vw.internal_image_rgb[FRONT_CAM]);
         qtime.restart();
-        front_m.Perform_Extraction(C1_FRONT, front_m.is[C1_FRONT].locator_threshold);
+        measurement.Perform_Extraction(product_index * 2);
         process_time = qtime.elapsed();
-        Display_Image(ui->View, front_m.result_image.data, front_m.result_image.cols, front_m.result_image.rows);
+        Display_Image(ui->View_Front, measurement.result_image.data, measurement.result_image.cols, measurement.result_image.rows);
 
-        ui->Results->clear();
-
-        // check result status
-        if (front_m.result[0] == CAL_OK)
+        if (measurement.result[0] == CAL_OK)
         {
-            Display_Front_Inspection_Results(C1_FRONT);
+            Display_Front_Inspection_Results(product_index);
             ui->Results->append(tr("Acquisition time: %1 secs, Processing time: %2 secs").arg(camera_thread.capture_time/1000.0).arg(process_time/1000.0));
 
-            Display_Production_Status(C1_FRONT);
+            Display_Front_Production_Status(product_index);
 
             if (ready_and_do_data_logging)
             {
-                Log_and_Process_Results(C1_FRONT);
-                ui->Results->append("Data are recorded");
-            }
-            else
-            {
-                ui->Results->append(tr("Data recording not performed."));
-            }
-
-                // if there was an request to learn color, do it
-            if (learn_color_on_next_capture)
-            {
-                front_m.is[C1_FRONT].copper_h = front_m.result[1];
-                front_m.is[C1_FRONT].copper_s = front_m.result[2];
-                front_m.is[C1_FRONT].silver_h = front_m.result[3];
-                front_m.is[C1_FRONT].silver_s = front_m.result[4];
-
-                Display_Front_Settings(C1_FRONT);
-
-                front_m.Save_Settings(C1_FRONT, product_type[C1_FRONT].vision_ini);
-                learn_color_on_next_capture = false;
-            }
-            ////////////////////////////////////////////////
-        }
-        else
-        {
-            Display_NA_Inspection_Results();
-
-            if (ready_and_do_data_logging)
-            {
-                Log_Extraction_Error(C1_FRONT);
-            }
-        }
-
-
-
-
-    }
-    else if (ui->Front_Type->currentIndex() == C2_FRONT)
-    {
-        //qDebug("result: %d", front_m.result[0]);
-        /*
-        Mat out;
-
-        cvtColor(vw.internal_image_rgb[camera_index], out, CV_RGB2GRAY);
-
-        imwrite("test.bmp", out);
-        */
-        front_m.Set_Image(vw.internal_image_rgb[camera_index]);
-
-        qtime.restart();
-        front_m.Perform_Extraction(C2_FRONT, front_m.is[C2_FRONT].locator_threshold);
-        process_time = qtime.elapsed();
-
-        Display_Image(ui->View, front_m.result_image.data, front_m.result_image.cols, front_m.result_image.rows);
-
-        ui->Results->clear();
-
-        if (front_m.result[0] == CAL_OK)
-        {
-            Display_Front_Inspection_Results(C2_FRONT);
-            ui->Results->append(tr("Acquisition time: %1 secs, Processing time: %2 secs").arg(camera_thread.capture_time/1000.0).arg(process_time/1000.0));
-
-            Display_Production_Status(C2_FRONT);
-
-            if (ready_and_do_data_logging)
-            {
-                Log_and_Process_Results(C2_FRONT);
+                Log_and_Process_Results(product_index * 2);
                 ui->Results->append("Data are recorded");
             }
             else
@@ -388,55 +317,49 @@ void MainWindow::On_Frame_Received(int camera_index)
             }
 
             // if there was an request to learn color, do it
-            if (learn_color_on_next_capture)
+            if (learn_front_color_on_next_capture)
             {
-                front_m.is[C2_FRONT].copper_h = front_m.result[1];
-                front_m.is[C2_FRONT].copper_s = front_m.result[2];
-                front_m.is[C2_FRONT].silver_h = front_m.result[3];
-                front_m.is[C2_FRONT].silver_s = front_m.result[4];
+                measurement.is[product_index * 2].lower_h = measurement.result[1];
+                measurement.is[product_index * 2].lower_s = measurement.result[2];
+                measurement.is[product_index * 2].upper_h = measurement.result[3];
+                measurement.is[product_index * 2].upper_s = measurement.result[4];
 
-                front_m.Save_Settings(C2_FRONT, product_type[C2_FRONT].vision_ini);
+                Display_Front_Settings(product_index);
 
-                Display_Front_Settings(C2_FRONT);
-
-                learn_color_on_next_capture = false;
+                measurement.Save_Settings(2 * product_index, product_type[product_index].vision_ini_front);
+                learn_front_color_on_next_capture = false;
             }
-
-
             ////////////////////////////////////////////////
         }
         else
         {
-            Display_NA_Inspection_Results();
+            Display_Front_NA_Inspection_Results();
+
             if (ready_and_do_data_logging)
             {
-                Log_Extraction_Error(C2_FRONT);
+                Log_Extraction_Error();
             }
         }
-
-
     }
-    else if (ui->Front_Type->currentIndex() == C3_FRONT)
+
+    if (product_type[product_index].use_back)
     {
-        front_m.Set_Image(vw.internal_image_rgb[camera_index]);
+        measurement.Set_Image(vw.internal_image_rgb[BACK_CAM]);
         qtime.restart();
-        front_m.Perform_Extraction(C3_FRONT, front_m.is[C3_FRONT].locator_threshold);
+        measurement.Perform_Extraction(product_index * 2 + 1);
         process_time = qtime.elapsed();
-        Display_Image(ui->View, front_m.result_image.data, front_m.result_image.cols, front_m.result_image.rows);
+        Display_Image(ui->View_Back, measurement.result_image.data, measurement.result_image.cols, measurement.result_image.rows);
 
-        ui->Results->clear();
-
-        // check result status
-        if (front_m.result[0] == CAL_OK)
+        if (measurement.result[0] == CAL_OK)
         {
-            Display_Front_Inspection_Results(C3_FRONT);
+            Display_Back_Inspection_Results(product_index);
             ui->Results->append(tr("Acquisition time: %1 secs, Processing time: %2 secs").arg(camera_thread.capture_time/1000.0).arg(process_time/1000.0));
 
-            Display_Production_Status(C3_FRONT);
+            Display_Back_Production_Status(product_index);
 
             if (ready_and_do_data_logging)
             {
-                Log_and_Process_Results(C3_FRONT);
+                Log_and_Process_Results(product_index * 2 + 1);
                 ui->Results->append("Data are recorded");
             }
             else
@@ -445,29 +368,31 @@ void MainWindow::On_Frame_Received(int camera_index)
             }
 
             // if there was an request to learn color, do it
-            if (learn_color_on_next_capture)
+            if (learn_back_color_on_next_capture)
             {
-                front_m.is[C3_FRONT].copper_h = front_m.result[1];
-                front_m.is[C3_FRONT].copper_s = front_m.result[2];
-                front_m.is[C3_FRONT].silver_h = front_m.result[3];
-                front_m.is[C3_FRONT].silver_s = front_m.result[4];
+                measurement.is[product_index * 2 + 1].lower_h = measurement.result[1];
+                measurement.is[product_index * 2 + 1].lower_s = measurement.result[2];
+                measurement.is[product_index * 2 + 1].upper_h = measurement.result[3];
+                measurement.is[product_index * 2 + 1].upper_s = measurement.result[4];
 
-                Display_Front_Settings(C3_FRONT);
+                Display_Back_Settings(product_index);
 
-                front_m.Save_Settings(C3_FRONT, product_type[C3_FRONT].vision_ini);
-                learn_color_on_next_capture = false;
+                measurement.Save_Settings(2 * product_index + 1, product_type[product_index].vision_ini_back);
+                learn_back_color_on_next_capture = false;
             }
             ////////////////////////////////////////////////
         }
         else
         {
-            Display_NA_Inspection_Results();
+            Display_Front_NA_Inspection_Results();
+
             if (ready_and_do_data_logging)
             {
-                Log_Extraction_Error(C3_FRONT);
+                Log_Extraction_Error();
             }
         }
     }
+
 
     /// tell camera thread that processing has finished
     camera_thread.mutex.unlock();
@@ -475,113 +400,204 @@ void MainWindow::On_Frame_Received(int camera_index)
 
 void MainWindow::Display_Front_Inspection_Results(int index)
 {
-
-        QString cr;
-        QString sr;
+        QString ur;
+        QString lr;
         QString dis;
-
 
     // clear result textbox;
 
-
-
-        Display_Image(ui->H, front_m.front_roi_h.data, front_m.front_roi_h.cols, front_m.front_roi_h.rows);
-        Display_Image(ui->S, front_m.front_roi_s.data, front_m.front_roi_s.cols, front_m.front_roi_s.rows);
-        Display_Image(ui->Color, front_m.front_roi_color.data, front_m.front_roi_color.cols, front_m.front_roi_color.rows);
+        Display_Image(ui->H_Front, measurement.front_roi_h.data, measurement.front_roi_h.cols, measurement.front_roi_h.rows);
+        Display_Image(ui->S_Front, measurement.front_roi_s.data, measurement.front_roi_s.cols, measurement.front_roi_s.rows);
+        Display_Image(ui->Color_Front, measurement.front_roi_color.data, measurement.front_roi_color.cols, measurement.front_roi_color.rows);
 
         // display current readings
-        cr = QString("%1, %2").arg(front_m.result[1]).arg(front_m.result[2]);
-        sr = QString("%1, %2").arg(front_m.result[3]).arg(front_m.result[4]);
+        lr = QString("%1, %2").arg(measurement.result[1]).arg(measurement.result[2]);
+        ur = QString("%1, %2").arg(measurement.result[3]).arg(measurement.result[4]);
 
-        if (front_m.result[5] > 0.35)
+        if (measurement.result[5] > 0.35)
         {
-            dis = QString(tr("%1 - Good")).arg(front_m.result[5]);
-        } else if (front_m.result[5] > 0.2)
+            dis = QString(tr("%1 - Good")).arg(measurement.result[5]);
+        } else if (measurement.result[5] > 0.2)
         {
-            dis = QString(tr("%1 - OK")).arg(front_m.result[5]);
+            dis = QString(tr("%1 - OK")).arg(measurement.result[5]);
         } else
         {
-            dis = QString(tr("%1 - Bad")).arg(front_m.result[5]);
+            dis = QString(tr("%1 - Bad")).arg(measurement.result[5]);
         }
 
-        ui->Silver_Reading->setText(sr);
-        ui->Copper_Reading->setText(cr);
-        ui->Current_Discrepancy->setText(dis);
+        ui->Upper_Reading_Front->setText(ur);
+        ui->Lower_Reading_Front->setText(lr);
+        ui->Current_Discrepancy_Front->setText(dis);
 
         // Display results
 
         QString result_string;
 
-
-
-        result_string = QString(tr("Cycle: %1")).arg(front_cycle_count);
+        result_string = QString(tr("Front Cycle: %1")).arg(front_cycle_count);
         ui->Results->append(result_string);
         result_string = QString(tr("Samples Inspected: %1")).arg(front_inspection_count);
         ui->Results->append(result_string);
 
-        for (int i=0; i<front_m.result[6]; i++)
+        for (int i=0; i<measurement.result[6]; i++)
         {
-            result_string = QString(tr("Sample %1: %2 mm")).arg(i).arg(front_m.result[i+7]);
+            result_string = QString(tr("Sample %1: %2 mm")).arg(i).arg(measurement.result[i+7]);
             ui->Results->append(result_string);
         }
 
-        double avg = front_m.result[7+(int) front_m.result[6]];
+        double avg = measurement.result[7+(int) measurement.result[6]];
 
         result_string = QString(tr("--------------------\nAverage: %1 mm")).arg(avg);
 
-        if (avg < front_m.is[index].min_silver)
+        if (avg < measurement.is[index * 2].min_distance)
         {
-            result_string = result_string + ", Min: " + QString("%1").arg(front_m.is[index].min_silver) + " mm, FAIL";
+            result_string = result_string + ", Min: " + QString("%1").arg(measurement.is[index * 2].min_distance) + " mm,  Max: " + QString("%1").arg(measurement.is[index * 2].max_distance) + ", FAIL";
 
 
         }
         else
         {
-            result_string = result_string + ", Min: " + QString("%1").arg(front_m.is[index].min_silver) + " mm, PASS";
-
-
+            result_string = result_string + ", Min: " + QString("%1").arg(measurement.is[index * 2].min_distance) + " mm,  Max: " + QString("%1").arg(measurement.is[index * 2].max_distance) + ", PASS";
         }
 
         ui->Results->append(result_string);
 
-        front_inspection_count = front_inspection_count + front_m.result[6];
+        front_inspection_count = front_inspection_count + measurement.result[6];
         front_cycle_count++;
 
     //////////////////////////////////////////////////////////////
 }
 
-void MainWindow::Display_NA_Inspection_Results()
+void MainWindow::Display_Back_Inspection_Results(int index)
 {
-    if (front_m.result[0] == NO_LOCATOR)
+        QString ur;
+        QString lr;
+        QString dis;
+
+    // clear result textbox;
+
+        Display_Image(ui->H_Back, measurement.front_roi_h.data, measurement.front_roi_h.cols, measurement.front_roi_h.rows);
+        Display_Image(ui->S_Back, measurement.front_roi_s.data, measurement.front_roi_s.cols, measurement.front_roi_s.rows);
+        Display_Image(ui->Color_Back, measurement.front_roi_color.data, measurement.front_roi_color.cols, measurement.front_roi_color.rows);;
+
+        // display current readings
+        lr = QString("%1, %2").arg(measurement.result[1]).arg(measurement.result[2]);
+        ur = QString("%1, %2").arg(measurement.result[3]).arg(measurement.result[4]);
+
+        if (measurement.result[5] > 0.35)
+        {
+            dis = QString(tr("%1 - Good")).arg(measurement.result[5]);
+        } else if (measurement.result[5] > 0.2)
+        {
+            dis = QString(tr("%1 - OK")).arg(measurement.result[5]);
+        } else
+        {
+            dis = QString(tr("%1 - Bad")).arg(measurement.result[5]);
+        }
+
+        ui->Upper_Reading_Back->setText(ur);
+        ui->Lower_Reading_Back->setText(lr);
+        ui->Current_Discrepancy_Back->setText(dis);
+
+        // Display results
+
+        QString result_string;
+
+        result_string = QString(tr("Back Cycle: %1")).arg(back_cycle_count);
+        ui->Results->append(result_string);
+        result_string = QString(tr("Samples Inspected: %1")).arg(back_inspection_count);
+        ui->Results->append(result_string);
+
+        for (int i=0; i<measurement.result[6]; i++)
+        {
+            result_string = QString(tr("Sample %1: %2 mm")).arg(i).arg(measurement.result[i+7]);
+            ui->Results->append(result_string);
+        }
+
+        double avg = measurement.result[7+(int) measurement.result[6]];
+
+        result_string = QString(tr("--------------------\nAverage: %1 mm")).arg(avg);
+
+        if (avg < measurement.is[index * 2 + 1].min_distance || avg > measurement.is[index * 2 + 1].max_distance)
+        {
+            result_string = result_string + ", Min: " + QString("%1").arg(measurement.is[index * 2 + 1].min_distance) + " mm, Max: " + QString("%1").arg(measurement.is[index * 2 + 1].max_distance) + ", FAIL";
+        }
+        else
+        {
+            result_string = result_string + ", Min: " + QString("%1").arg(measurement.is[index * 2 + 1].min_distance) + " mm,  Max: " + QString("%1").arg(measurement.is[index * 2 + 1].max_distance) + ", PASS";
+        }
+
+        ui->Results->append(result_string);
+
+        back_inspection_count = back_inspection_count + measurement.result[6];
+        back_cycle_count++;
+
+    //////////////////////////////////////////////////////////////
+}
+
+void MainWindow::Display_Front_NA_Inspection_Results()
+{
+    if (measurement.result[0] == NO_LOCATOR)
     {
         ui->Results->append(tr("Error #1: No locator found! Check locator sensitivity settings."));
     }
-    else if (front_m.result[0] == LOCATOR_INVALID)
+    else if (measurement.result[0] == LOCATOR_INVALID)
     {
         ui->Results->append(tr("Error #2: Locator all invalid! Check locator sensitivity settings."));
     }
-    else if (front_m.result[0] == ROI_INVALID)
+    else if (measurement.result[0] == ROI_INVALID)
     {
         ui->Results->append(tr("Error #3: Roi's of of screen."));
     }
 
-    ui->H->setPixmap(QPixmap());
-    ui->S->setPixmap(QPixmap());
-    ui->Color->setPixmap(QPixmap());
+    ui->H_Front->setPixmap(QPixmap());
+    ui->S_Front->setPixmap(QPixmap());
+    ui->Color_Front->setPixmap(QPixmap());
 
     // display current readings
     QString cr = QString("H: %1, S: %2").arg("N/A").arg("N/A");
     QString sr = QString("H: %1, S: %2").arg("N/A").arg("N/A");
     QString dis = QString("%1").arg("N/A");
 
-    ui->Silver_Reading->setText(sr);
-    ui->Copper_Reading->setText(cr);
-    ui->Current_Discrepancy->setText(dis);
+    ui->Upper_Reading_Front->setText(sr);
+    ui->Lower_Reading_Front->setText(cr);
+    ui->Current_Discrepancy_Front->setText(dis);
     //////////////////////////////////////////////////////////////
 
     ui->Front_Result->setStyleSheet("background: white");
     ui->Front_Result->setText("N/A");
+}
 
+void MainWindow::Display_Back_NA_Inspection_Results()
+{
+    if (measurement.result[0] == NO_LOCATOR)
+    {
+        ui->Results->append(tr("Error #1: No locator found! Check locator sensitivity settings."));
+    }
+    else if (measurement.result[0] == LOCATOR_INVALID)
+    {
+        ui->Results->append(tr("Error #2: Locator all invalid! Check locator sensitivity settings."));
+    }
+    else if (measurement.result[0] == ROI_INVALID)
+    {
+        ui->Results->append(tr("Error #3: Roi's of of screen."));
+    }
+
+    ui->H_Back->setPixmap(QPixmap());
+    ui->S_Back->setPixmap(QPixmap());
+    ui->Color_Back->setPixmap(QPixmap());
+
+    // display current readings
+    QString cr = QString("H: %1, S: %2").arg("N/A").arg("N/A");
+    QString sr = QString("H: %1, S: %2").arg("N/A").arg("N/A");
+    QString dis = QString("%1").arg("N/A");
+
+    ui->Upper_Reading_Back->setText(sr);
+    ui->Lower_Reading_Back->setText(cr);
+    ui->Current_Discrepancy_Back->setText(dis);
+    //////////////////////////////////////////////////////////////
+
+    ui->Back_Result->setStyleSheet("background: white");
+    ui->Back_Result->setText("N/A");
 }
 
 void MainWindow::Display_Image(QLabel* view, uchar* data, int width, int height)
@@ -608,22 +624,44 @@ void MainWindow::Display_Image(QLabel* view, uchar* data, int width, int height)
 
 }
 
-void MainWindow::On_Front_Type_Changed(int type)
-{
-    front_m.Load_Settings(type, product_type[type].vision_ini);
+void MainWindow::On_Product_Type_Changed(int index)
+{    
+    if (product_type[index].use_front)
+    {
+        measurement.Load_Settings(index * 2, product_type[index].vision_ini_front);
+    }
+
+    if (product_type[index].use_back)
+    {
+        measurement.Load_Settings(index * 2 + 1, product_type[index].vision_ini_back);
+    }
 
     // disconnect some signals for a while to prvent problems
     disconnect(ui->Front_Threshold, SIGNAL(sliderReleased()), this, SLOT(On_Front_Locator_Threshold_Finished()));
-    disconnect(ui->Front_Min_Silver, SIGNAL(valueChanged(double)), this, SLOT(On_Front_Min_Silver_Changed(double)));
-    disconnect(ui->Camera_Shutter, SIGNAL(valueChanged(int)), this, SLOT(On_Camera_Shutter_Changed(int)));
+    disconnect(ui->Front_Threshold, SIGNAL(valueChanged(int)), this, SLOT(On_Front_Locator_Threshold_Changed(int)));
+    disconnect(ui->Front_Min_Distance, SIGNAL(valueChanged(double)), this, SLOT(On_Front_Min_Distance_Changed(double)));
+    disconnect(ui->Front_Max_Distance, SIGNAL(valueChanged(double)), this, SLOT(On_Front_Max_Distance_Changed(double)));
+    disconnect(ui->Camera_Shutter_Front, SIGNAL(valueChanged(int)), this, SLOT(On_Front_Camera_Shutter_Changed(int)));
 
-    Display_Front_Settings(type);
+    disconnect(ui->Back_Threshold, SIGNAL(sliderReleased()), this, SLOT(On_Back_Locator_Threshold_Finished()));
+    disconnect(ui->Back_Threshold, SIGNAL(valueChanged(int)), this, SLOT(On_Back_Locator_Threshold_Changed(int)));
+    disconnect(ui->Back_Min_Distance, SIGNAL(valueChanged(double)), this, SLOT(On_Back_Min_Distance_Changed(double)));
+    disconnect(ui->Back_Max_Distance, SIGNAL(valueChanged(double)), this, SLOT(On_Back_Max_Distance_Changed(double)));
+    disconnect(ui->Camera_Shutter_Back, SIGNAL(valueChanged(int)), this, SLOT(On_Back_Camera_Shutter_Changed(int)));
+
+    Display_Settings(index);
 
     connect(ui->Front_Threshold, SIGNAL(sliderReleased()), this, SLOT(On_Front_Locator_Threshold_Finished()));
-    connect(ui->Front_Min_Silver, SIGNAL(valueChanged(double)), this, SLOT(On_Front_Min_Silver_Changed(double)));
-    connect(ui->Camera_Shutter, SIGNAL(valueChanged(int)), this, SLOT(On_Camera_Shutter_Changed(int)));
+    connect(ui->Front_Threshold, SIGNAL(valueChanged(int)), this, SLOT(On_Front_Locator_Threshold_Changed(int)));
+    connect(ui->Front_Min_Distance, SIGNAL(valueChanged(double)), this, SLOT(On_Front_Min_Distance_Changed(double)));
+    connect(ui->Front_Max_Distance, SIGNAL(valueChanged(double)), this, SLOT(On_Front_Max_Distance_Changed(double)));
+    connect(ui->Camera_Shutter_Front, SIGNAL(valueChanged(int)), this, SLOT(On_Front_Camera_Shutter_Changed(int)));
 
-
+    connect(ui->Back_Threshold, SIGNAL(sliderReleased()), this, SLOT(On_Back_Locator_Threshold_Finished()));
+    connect(ui->Back_Threshold, SIGNAL(valueChanged(int)), this, SLOT(On_Back_Locator_Threshold_Changed(int)));
+    connect(ui->Back_Min_Distance, SIGNAL(valueChanged(double)), this, SLOT(On_Back_Min_Distance_Changed(double)));
+    connect(ui->Back_Max_Distance, SIGNAL(valueChanged(double)), this, SLOT(On_Back_Max_Distance_Changed(double)));
+    connect(ui->Camera_Shutter_Back, SIGNAL(valueChanged(int)), this, SLOT(On_Back_Camera_Shutter_Changed(int)));
 }
 
 bool MainWindow::Load_Settings()
@@ -646,6 +684,11 @@ bool MainWindow::Load_Settings()
         product_type[i].name = set.value(QString("Product%1/Name").arg(i)).toString();
         ui->Product_Type->addItem(product_type[i].name);
 
+        product_type[i].use_front = set.value(QString("Product%1/Use_Front").arg(i)).toInt(&ok);
+        if (!ok) return false;
+        product_type[i].use_back = set.value(QString("Product%1/Use_Back").arg(i)).toInt(&ok);
+        if (!ok) return false;
+
         product_type[i].vision_ini_front = set.value(QString("Product%1/Vision_Ini_Name_Front").arg(i)).toString();
         product_type[i].vision_ini_back = set.value(QString("Product%1/Vision_Ini_Name_Back").arg(i)).toString();
     }
@@ -655,15 +698,9 @@ bool MainWindow::Load_Settings()
     return true;
 }
 
-void MainWindow::On_Front_Start()
+void MainWindow::On_Start()
 {
     // Check if there are any cameras being enabled at all
-
-    if (!ui->actionEnable_Front_Camera_2->isChecked() && !ui->actionEnable_Back_Camera->isChecked())
-    {
-        QMessageBox::warning(this, tr("Start Capture"), tr("No cameras are enabled, not starting capture."), QMessageBox::Ok, QMessageBox::Ok);
-        return;
-    }
 
 
     if (!camera_thread.isRunning())
@@ -674,31 +711,39 @@ void MainWindow::On_Front_Start()
 
         // Load in settings everytime to make changes in ini file easier to reflect
 
-        if (ui->Front_Type->currentIndex() == C1_FRONT)
+        QString product_name = ui->Product_Type->currentText();
+        int product_index = ui->Product_Type->findText(product_name);
+
+        camera_thread.do_back_camera = false;
+        camera_thread.do_front_camera = false;
+
+        if (product_type[product_index].use_front)
         {
-            front_m.Load_Settings(C1_FRONT, product_type[C1_FRONT].vision_ini);
+            measurement.Load_Settings(product_index * 2, product_type[product_index].vision_ini_front);
+            camera_thread.do_front_camera = true;
+
+            // update camera shutter to make sure images are taken wth correct shutter
+
+            int shutter = measurement.is[product_index * 2].camera_shutter;
+            int gain = measurement.is[product_index*2].camera_gain;
+            qDebug() << "Set Camera Exposure:" << vw.Set_Exposure(FRONT_CAM, shutter);
+            qDebug() << "Set Camera Gain:" << vw.Set_Gain(FRONT_CAM, gain);
+            qDebug() << "Set Image Format:" << vw.Set_Image_Format(FRONT_CAM, "RGB8Packed");
+
         }
-        else if (ui->Front_Type->currentIndex() == C2_FRONT)
+
+        if (product_type[product_index].use_back)
         {
-            front_m.Load_Settings(C2_FRONT, product_type[C2_FRONT].vision_ini);
+            measurement.Load_Settings(product_index * 2 + 1, product_type[product_index].vision_ini_back);
+            camera_thread.do_back_camera = true;
+
+            int shutter = measurement.is[product_index * 2 + 1].camera_shutter;
+            int gain = measurement.is[product_index*2 + 1].camera_gain;
+            qDebug() << "Set Camera Exposure:" << vw.Set_Exposure(BACK_CAM, shutter);
+            qDebug() << "Set Camera Gain:" <<vw.Set_Gain(BACK_CAM, gain);
+            qDebug() << "Set Image Format:" <<vw.Set_Image_Format(BACK_CAM, "RGB8Packed");
         }
-        else if (ui->Front_Type->currentIndex() == C3_FRONT)
-        {
-            front_m.Load_Settings(C3_FRONT, product_type[C3_FRONT].vision_ini);
-        }
-        else if (ui->Front_Type->currentIndex() == C1_BACK)
-        {
-            front_m.Load_Settings(C1_BACK, product_type[C1_BACK].vision_ini);
-        }
-        else if (ui->Front_Type->currentIndex() == C2_BACK)
-        {
-            front_m.Load_Settings(C2_BACK, product_type[C2_BACK].vision_ini);
-        }
-        else
-        {
-            QMessageBox::warning(this, tr("Cannot Peform Request"), tr("Cannot start inspection as settings cannot be loaded!"), QMessageBox::Ok);
-            return;
-        }
+
 
         // result number of inspections done so far
         front_inspection_count = 0;
@@ -706,23 +751,9 @@ void MainWindow::On_Front_Start()
         front_cycle_count = 0;
         back_cycle_count = 0;
 
-        camera_thread.do_front_camera = true;
-
-        if (ui->actionEnable_Front_Camera_2->isChecked())
-        {
-            vw.Set_Exposure(FRONT_CAM, front_m.is[ui->Front_Type->currentIndex()].camera_shutter);
-            camera_thread.camera_index = FRONT_CAM;
-        }
-        else if (ui->actionEnable_Back_Camera->isChecked())
-        {
-            vw.Set_Exposure(BACK_CAM, front_m.is[ui->Front_Type->currentIndex()].camera_shutter);
-            camera_thread.camera_index = BACK_CAM;
-        }
-
         camera_thread.start();
 
         Start_LJ();
-
     }
 }
 
@@ -740,7 +771,7 @@ void MainWindow::Stop_LJ()
     lj_thread.do_red_button = false;
 }
 
-void MainWindow::On_Front_Stop()
+void MainWindow::On_Stop()
 {
     if (camera_thread.isRunning())
     {
@@ -749,8 +780,10 @@ void MainWindow::On_Front_Stop()
         Enable_Manual_Controls();
 
         // reset fail accumulation on stop camera
-        consecutive_fail = 0;
-        prev_result = true;
+        front_consecutive_fail = 0;
+        front_prev_result = true;
+        back_consecutive_fail = 0;
+        back_prev_result = true;
 
         Stop_LJ();
 
@@ -761,62 +794,95 @@ void MainWindow::On_Front_Stop()
 
 void MainWindow::Display_Front_Settings(int index)
 {
-    QString qs = QString("%1, %2").arg(front_m.is[index].silver_h).arg(front_m.is[index].silver_s);
-    QString qc = QString("%1, %2").arg(front_m.is[index].copper_h).arg(front_m.is[index].copper_s);
+    QString q_upper = QString("%1, %2").arg(measurement.is[2 * index].upper_h).arg(measurement.is[2 * index].upper_s);
+    QString q_lower  = QString("%1, %2").arg(measurement.is[2 * index].lower_h).arg(measurement.is[2 * index].lower_s);
 
-    ui->Silver_Reference->setText(qs);
-    ui->Copper_Reference->setText(qc);
+    ui->Upper_Reference_Front->setText(q_upper);
+    ui->Lower_Reference_Front->setText(q_lower);
 
-    ui->Front_Threshold->setValue(front_m.is[index].locator_threshold);
+    ui->Front_Threshold->setValue(measurement.is[index * 2].locator_threshold);
+    ui->Front_Min_Distance->setValue(measurement.is[index * 2].min_distance);
+    ui->Front_Max_Distance->setValue(measurement.is[index * 2].max_distance);
 
-    ui->Front_Min_Silver->setValue(front_m.is[index].min_silver);
-
-    ui->Camera_Shutter->setValue(front_m.is[index].camera_shutter);
+    ui->Camera_Shutter_Front->setValue(measurement.is[index * 2].camera_shutter);
 
 }
 
 void MainWindow::Display_Back_Settings(int index)
 {
-    QString qs = QString("%1, %2").arg(front_m.is[index].silver_h).arg(front_m.is[index].silver_s);
-    QString qc = QString("%1, %2").arg(front_m.is[index].copper_h).arg(front_m.is[index].copper_s);
+    QString q_upper = QString("%1, %2").arg(measurement.is[2 * index + 1].upper_h).arg(measurement.is[2 * index + 1].upper_s);
+    QString q_lower = QString("%1, %2").arg(measurement.is[2 * index + 1].lower_h).arg(measurement.is[2 * index + 1].lower_s);
 
-    ui->Silver_Reference_Back->setText(qs);
-    ui->Copper_Reference_Back->setText(qc);
+    ui->Upper_Reference_Back->setText(q_upper);
+    ui->Lower_Reference_Back->setText(q_lower);
 
-    ui->Back_Threshold->setValue(front_m.is[index].locator_threshold);
+    ui->Back_Threshold->setValue(measurement.is[2 * index + 1].locator_threshold);
+    ui->Back_Min_Distance->setValue(measurement.is[2 * index + 1].min_distance);
+    ui->Back_Max_Distance->setValue(measurement.is[2 * index + 1].max_distance);
 
-    ui->Back_Min_Silver->setValue(front_m.is[index].min_silver);
+    ui->Camera_Shutter_Back->setValue(measurement.is[2 * index + 1].camera_shutter);
+
+}
+
+void MainWindow::Display_Settings(int product_index)
+{
+    if (product_type[product_index].use_front)
+    {
+        Display_Front_Settings(product_index);
+        Enable_Front_Camera_Controls();
+    }
+    else
+    {
+        Disable_Front_Camera_Controls();
+    }
+
+    if (product_type[product_index].use_back)
+    {
+        Display_Back_Settings(product_index);
+        Enable_Back_Camera_Controls();
+    }
+    else
+    {
+        Disable_Back_Camera_Controls();
+    }
+
 }
 
 void MainWindow::Disable_Manual_Controls()
 {
-    ui->Front_Type->setEnabled(false);
-
-    // disable the camera menu bar so that user cannot change config during inspections!
-    ui->menuCamera->setEnabled(false);
+    ui->Product_Type->setEnabled(false);
 }
 
 void MainWindow::Enable_Manual_Controls()
 {
-    ui->Front_Type->setEnabled(true);
-
-
-    ui->menuCamera->setEnabled(true);
-
+    ui->Product_Type->setEnabled(true);
 }
 
 void MainWindow::On_Front_Learn()
 {
     if (camera_thread.isRunning())
     {
-        int ret = QMessageBox::information(this, tr("Learn colors"), tr("Press OK to learn Hue and saturation values for silver and copper colors."), QMessageBox::Ok | QMessageBox::Cancel, QMessageBox::Cancel);
+        int ret = QMessageBox::information(this, tr("Learn colors"), tr("Press OK to learn Hue and Saturation values for upper and lower colors for front camera."), QMessageBox::Ok | QMessageBox::Cancel, QMessageBox::Cancel);
 
         if (ret == QMessageBox::Ok)
         {
-            learn_color_on_next_capture = true;
+            learn_front_color_on_next_capture = true;
         }
     }
 
+}
+
+void MainWindow::On_Back_Learn()
+{
+    if (camera_thread.isRunning())
+    {
+        int ret = QMessageBox::information(this, tr("Learn colors"), tr("Press OK to learn Hue and Saturation values for upper and lower colors for back camera."), QMessageBox::Ok | QMessageBox::Cancel, QMessageBox::Cancel);
+
+        if (ret == QMessageBox::Ok)
+        {
+            learn_back_color_on_next_capture = true;
+        }
+    }
 }
 
 void MainWindow::Disable_Back_Camera_Controls()
@@ -842,20 +908,20 @@ void MainWindow::Enable_Back_Camera_Controls()
 
 void MainWindow::Disable_Front_Camera_Controls()
 {
-    ui->View->setVisible(false);
-    ui->Color->setVisible(false);
-    ui->H->setVisible(false);
-    ui->S->setVisible(false);
+    ui->View_Front->setVisible(false);
+    ui->Color_Front->setVisible(false);
+    ui->H_Front->setVisible(false);
+    ui->S_Front->setVisible(false);
 
     ui->Front_Controls->setVisible(false);
 }
 
 void MainWindow::Enable_Front_Camera_Controls()
 {
-    ui->View->setVisible(true);
-    ui->Color->setVisible(true);
-    ui->H->setVisible(true);
-    ui->S->setVisible(true);
+    ui->View_Front->setVisible(true);
+    ui->Color_Front->setVisible(true);
+    ui->H_Front->setVisible(true);
+    ui->S_Front->setVisible(true);
 
     ui->Front_Controls->setVisible(true);
 
@@ -875,75 +941,34 @@ void MainWindow::On_Delay_State_Changed()
 
 void MainWindow::On_Front_Locator_Threshold_Changed(int value)
 {
-    switch (ui->Front_Type->currentIndex())
-    {
-    case C1_FRONT:
-        {
-            front_m.is[C1_FRONT].locator_threshold = value;
-            return;
-        }
-    case C2_FRONT:
-        {
-            front_m.is[C2_FRONT].locator_threshold = value;
-            return;
-        }
-    case C3_FRONT:
-        {
-            front_m.is[C3_FRONT].locator_threshold = value;
-            return;
-        }
-    case C1_BACK:
-        {
-            front_m.is[C1_BACK].locator_threshold = value;
-            return;
-        }
-    case C2_BACK:
-        {
-            front_m.is[C2_BACK].locator_threshold = value;
-            return;
-        }
-    default:
-        {
-            return;
-        }
-    }
+    QString current_product = ui->Product_Type->currentText();
+    int current_index = ui->Product_Type->findText(current_product);
 
+    measurement.is[current_index * 2].locator_threshold = value;
 }
 
 void MainWindow::On_Front_Locator_Threshold_Finished()
 {
-    switch (ui->Front_Type->currentIndex())
-    {
-    case C1_FRONT:
-        {
-            front_m.Save_Settings(C1_FRONT, product_type[C1_FRONT].vision_ini);
-            return;
-        }
-    case C2_FRONT:
-        {
-            front_m.Save_Settings(C2_FRONT, product_type[C2_FRONT].vision_ini);
-            return;
-        }
-    case C3_FRONT:
-        {
-            front_m.Save_Settings(C3_FRONT, product_type[C3_FRONT].vision_ini);
-            return;
-        }
-    case C1_BACK:
-        {
-            front_m.Save_Settings(C1_BACK, product_type[C1_BACK].vision_ini);
-            return;
-        }
-    case C2_BACK:
-        {
-            front_m.Save_Settings(C2_BACK, product_type[C2_BACK].vision_ini);
-            return;
-        }
-    default:
-        {
-            return;
-        }
-    }
+    QString current_product = ui->Product_Type->currentText();
+    int current_index = ui->Product_Type->findText(current_product);
+
+    measurement.Save_Settings(current_index * 2, product_type[current_index].vision_ini_front);
+}
+
+void MainWindow::On_Back_Locator_Threshold_Changed(int value)
+{
+    QString current_product = ui->Product_Type->currentText();
+    int current_index = ui->Product_Type->findText(current_product);
+
+    measurement.is[current_index * 2 + 1].locator_threshold = value;
+}
+
+void MainWindow::On_Back_Locator_Threshold_Finished()
+{
+    QString current_product = ui->Product_Type->currentText();
+    int current_index = ui->Product_Type->findText(current_product);
+
+    measurement.Save_Settings(current_index * 2 + 1, product_type[current_index].vision_ini_back);
 }
 
 void MainWindow::On_Action_Quit()
@@ -969,7 +994,6 @@ void MainWindow::On_Action_Register_Lot_Number()
 
     lot_number = QInputDialog::getText(this, tr("Register"), tr("Enter lot number:"), QLineEdit::Normal, "", &ok);
 
-
     QDir qdir(output_folder);
 
     if (ok)
@@ -986,21 +1010,22 @@ void MainWindow::On_Action_Register_Lot_Number()
 
 }
 
-void MainWindow::Display_Production_Status(int index)
+void MainWindow::Display_Front_Production_Status(int index)
 {
-    double avg = front_m.result[7+(int) front_m.result[6]];
-    double min_silver = front_m.is[index].min_silver;
+    double avg = measurement.result[7+(int) measurement.result[6]];
+    double min_distance = measurement.is[index * 2].min_distance;
+    double max_distance = measurement.is[index * 2].max_distance;
 
     if (!bypass_result)
     {
-        if (avg <= min_silver)
+        if (avg <= min_distance || avg >= max_distance)
         {
-            if (prev_result == false)
+            if (front_prev_result == false)
             {
                 // only increment fail counter if system is ready
                 if (ready_and_do_data_logging)
                 {
-                    consecutive_fail++;
+                    front_consecutive_fail++;
                 }
             }
 
@@ -1013,22 +1038,22 @@ void MainWindow::Display_Production_Status(int index)
                 ui->Front_Result->setStyleSheet("background: white");
             }
 
-            if (consecutive_fail > front_m.is[index].fail_threshold)
+            if (front_consecutive_fail > measurement.is[index * 2].fail_threshold)
             {
-                ui->Front_Result->setText(QString(tr("Fail - %1/%2, Alarm!")).arg(consecutive_fail).arg(front_m.is[index].fail_threshold));
-                fail_alarmed = true;
+                ui->Front_Result->setText(QString(tr("Fail - %1/%2, Alarm!")).arg(front_consecutive_fail).arg(measurement.is[index * 2].fail_threshold));
+                front_fail_alarmed = true;
 
                 // Send signal out frrom labjack
 
-                lj.Set_Fail_Status(1);
+                lj.Set_Front_Fail_Status(1);
 
             }
             else
             {
-                ui->Front_Result->setText(QString(tr("Fail - %1/%2")).arg(consecutive_fail).arg(front_m.is[index].fail_threshold));
+                ui->Front_Result->setText(QString(tr("Fail - %1/%2")).arg(front_consecutive_fail).arg(measurement.is[index * 2].fail_threshold));
             }
 
-            prev_result = false;
+            front_prev_result = false;
         }
         else
         {
@@ -1038,7 +1063,7 @@ void MainWindow::Display_Production_Status(int index)
 
             if (ready_and_do_data_logging)
             {
-                if (fail_alarmed)
+                if (front_fail_alarmed)
                 {
                     ui->Front_Result->setStyleSheet("background: yellow");
                 }
@@ -1053,17 +1078,17 @@ void MainWindow::Display_Production_Status(int index)
             }
 
 
-            if (fail_alarmed)
+            if (front_fail_alarmed)
             {
                 ui->Front_Result->setText(tr("Pass - Alarm Triggered"));
-                prev_result = true;
-                consecutive_fail = 0;
+                front_prev_result = true;
+                front_consecutive_fail = 0;
             }
             else
             {
                 ui->Front_Result->setText(tr("Pass"));
-                prev_result = true;
-                consecutive_fail = 0;
+                front_prev_result = true;
+                front_consecutive_fail = 0;
             }
         }
     }
@@ -1072,13 +1097,106 @@ void MainWindow::Display_Production_Status(int index)
         // ignore inspection results
         ui->Front_Result->setText(QString(tr("Bypass")));
         ui->Front_Result->setStyleSheet("background: blue");
-        consecutive_fail = 0;
-        prev_result = true;
+        front_consecutive_fail = 0;
+        front_prev_result = true;
     }
 }
 
-void MainWindow::Log_and_Process_Results(int index)
+void MainWindow::Display_Back_Production_Status(int index)
 {
+    double avg = measurement.result[7+(int) measurement.result[6]];
+    double min_distance = measurement.is[index * 2 + 1].min_distance;
+    double max_distance = measurement.is[index * 2 + 1].max_distance;
+
+    if (!bypass_result)
+    {
+        if (avg <= min_distance || avg >= max_distance)
+        {
+            if (back_prev_result == false)
+            {
+                // only increment fail counter if system is ready
+                if (ready_and_do_data_logging)
+                {
+                    back_consecutive_fail++;
+                }
+            }
+
+            if (ready_and_do_data_logging)
+            {
+                ui->Back_Result->setStyleSheet("background: red");
+            }
+            else
+            {
+                ui->Back_Result->setStyleSheet("background: white");
+            }
+
+            if (back_consecutive_fail > measurement.is[index * 2 + 1].fail_threshold)
+            {
+                ui->Back_Result->setText(QString(tr("Fail - %1/%2, Alarm!")).arg(back_consecutive_fail).arg(measurement.is[index * 2 + 1].fail_threshold));
+                back_fail_alarmed = true;
+
+                // Send signal out frrom labjack
+                lj.Set_Back_Fail_Status(1);
+
+            }
+            else
+            {
+                ui->Back_Result->setText(QString(tr("Fail - %1/%2")).arg(back_consecutive_fail).arg(measurement.is[index * 2 + 1].fail_threshold));
+            }
+
+            back_prev_result = false;
+        }
+        else
+        {
+
+            // if there is a pass, reset consecutive fail
+            // also need to check if this pass is immediately after a fail alarm if so, notify the user as well
+
+            if (ready_and_do_data_logging)
+            {
+                if (back_fail_alarmed)
+                {
+                    ui->Back_Result->setStyleSheet("background: yellow");
+                }
+                else
+                {
+                    ui->Back_Result->setStyleSheet("background: green");
+                }
+            }
+            else
+            {
+                ui->Back_Result->setStyleSheet("background: white");
+            }
+
+
+            if (back_fail_alarmed)
+            {
+                ui->Back_Result->setText(tr("Pass - Alarm Triggered"));
+                back_prev_result = true;
+                back_consecutive_fail = 0;
+            }
+            else
+            {
+                ui->Back_Result->setText(tr("Pass"));
+                back_prev_result = true;
+                back_consecutive_fail = 0;
+            }
+        }
+    }
+    else
+    {
+        // ignore inspection results
+        ui->Back_Result->setText(QString(tr("Bypass")));
+        ui->Back_Result->setStyleSheet("background: blue");
+        back_consecutive_fail = 0;
+        back_prev_result = true;
+    }
+}
+
+void MainWindow::Log_and_Process_Results(int calculated_index)
+{
+
+    // add both front and back logging here
 
     output_file.open(QIODevice::ReadWrite | QIODevice::Append | QIODevice::Text);
 
@@ -1088,12 +1206,21 @@ void MainWindow::Log_and_Process_Results(int index)
 
     QString date_string = qdt.toString("[dd/MM/yyyy, hh:mm:ss:zzz]");
 
-    double avg = front_m.result[7+(int) front_m.result[6]];
-    double min_silver = front_m.is[index].min_silver;
+    double avg = measurement.result[7+(int) measurement.result[6]];
+    double min_distance = measurement.is[calculated_index].min_distance;
+    double max_distance = measurement.is[calculated_index].max_distance;
+
+    bool is_front = false;
+
+    if ((calculated_index % 2) == 0)
+    {
+        // that is, it is a front capture
+        is_front = true;
+    }
 
     QString result;
 
-    if (avg <= min_silver)
+    if (avg <= min_distance || avg >= max_distance)
     {
         result = "FAIL";
     }
@@ -1102,14 +1229,21 @@ void MainWindow::Log_and_Process_Results(int index)
         result = "PASS";
     }
 
-    output_stream << date_string << ":\t" << ui->Front_Type->currentText() << "\t" << avg << " mm, Min: " << front_m.is[index].min_silver << " mm, " << result << "\n\r";
+    if (is_front)
+    {
+        output_stream << date_string << ":\t" << ui->Product_Type->currentText() << "\t" << "Front Camera\t" << avg << " mm, Min: " << measurement.is[calculated_index].min_distance << " mm, Max: " << measurement.is[calculated_index].max_distance << "\t" << result << "\n\r";
+    }
+    else
+    {
+         output_stream << date_string << ":\t" << ui->Product_Type->currentText() << "\t" << "Back Camera\t" << avg << " mm, Min: " << measurement.is[calculated_index].min_distance << " mm, Max: " << measurement.is[calculated_index].max_distance << "\t" << result << "\n\r";
+    }
 
     output_file.close();
 
 
 }
 
-void MainWindow::Log_Extraction_Error(int index)
+void MainWindow::Log_Extraction_Error()
 {
     output_file.open(QIODevice::ReadWrite | QIODevice::Append | QIODevice::Text);
 
@@ -1119,7 +1253,22 @@ void MainWindow::Log_Extraction_Error(int index)
 
     QString date_string = qdt.toString("[dd/MM/yyyy, hh:mm:ss:zzz]");
 
-    output_stream << date_string << ":\tError: " << front_m.result[0] << "\n\r";
+    QString error_string;
+
+    if (measurement.result[0] == NO_LOCATOR)
+    {
+        error_string = "Locator Not Found";
+    }
+    else if (measurement.result[0] == LOCATOR_INVALID)
+    {
+        error_string = "Locator Invalid";
+    }
+    else if (measurement.result[0] == ROI_INVALID)
+    {
+        error_string = "Material Out Of Screen";
+    }
+
+    output_stream << date_string << ":\tError: " << measurement.result[0] << "\t" << error_string << "\n\r";
 
     output_file.close();
 }
@@ -1192,7 +1341,7 @@ void MainWindow::On_Green_Button_Triggered()
         ui->actionStart_Data_Logging->setChecked(true);
         ui->statusbar->showMessage(tr("Data logging started!"));
     }
-    else
+    else if (camera_thread.isRunning())
     {
 
     }
@@ -1203,78 +1352,40 @@ void MainWindow::On_Red_Button_Triggered()
     On_Action_Clear_Alarm();
 }
 
-void MainWindow::On_Front_Min_Silver_Changed(double value)
+void MainWindow::On_Front_Min_Distance_Changed(double value)
 {
-    switch (ui->Front_Type->currentIndex())
-    {
-    case C1_FRONT:
-        {
-            front_m.is[C1_FRONT].min_silver = value;
-            front_m.Save_Settings(C1_FRONT, product_type[C1_FRONT].vision_ini);
-            return;
-        }
-    case C2_FRONT:
-        {
-            front_m.is[C2_FRONT].min_silver = value;
-            front_m.Save_Settings(C2_FRONT, product_type[C2_FRONT].vision_ini);
-            return;
-        }
-    case C3_FRONT:
-        {
-            front_m.is[C3_FRONT].min_silver = value;
-            front_m.Save_Settings(C3_FRONT, product_type[C3_FRONT].vision_ini);
-            return;
-        }
-    case C1_BACK:
-        {
-            front_m.is[C1_BACK].min_silver = value;
-            front_m.Save_Settings(C1_BACK, product_type[C1_BACK].vision_ini);
-            return;
-        }
-    case C2_BACK:
-        {
-            front_m.is[C2_BACK].min_silver = value;
-            front_m.Save_Settings(C2_BACK, product_type[C2_BACK].vision_ini);
-            return;
-        }
-    default:
-        {
-            return;
-        }
-    }
+    QString current_product = ui->Product_Type->currentText();
+    int current_index = ui->Product_Type->findText(current_product);
 
+    measurement.is[current_index * 2].min_distance = value;
+    measurement.Save_Settings(current_index * 2, product_type[current_index].vision_ini_front);
 }
 
-void MainWindow::On_Front_Camera_State_Changed()
+void MainWindow::On_Front_Max_Distance_Changed(double value)
 {
-    if (ui->actionEnable_Front_Camera_2->isChecked())
-    {
-        Enable_Front_Camera_Controls();
-        ui->actionEnable_Back_Camera->setChecked(false);
-    }
-    else
-    {
-        Disable_Front_Camera_Controls();
-    }
+    QString current_product = ui->Product_Type->currentText();
+    int current_index = ui->Product_Type->findText(current_product);
 
+    measurement.is[current_index * 2].max_distance = value;
+    measurement.Save_Settings(current_index * 2, product_type[current_index].vision_ini_front);
 }
 
-void MainWindow::On_Back_Camera_State_Changed()
+void MainWindow::On_Back_Min_Distance_Changed(double value)
 {
+    QString current_product = ui->Product_Type->currentText();
+    int current_index = ui->Product_Type->findText(current_product);
 
+    measurement.is[current_index * 2 + 1].min_distance = value;
+    measurement.Save_Settings(current_index * 2 + 1, product_type[current_index].vision_ini_back);
+}
 
-    if (ui->actionEnable_Back_Camera->isChecked())
-    {
+void MainWindow::On_Back_Max_Distance_Changed(double value)
+{
+    QString current_product = ui->Product_Type->currentText();
+    int current_index = ui->Product_Type->findText(current_product);
 
-        Enable_Front_Camera_Controls();
-        ui->actionEnable_Front_Camera_2->setChecked(false);
-    }
-    else
-    {
-        // Note, it is FRONT that is being disabled
-        Disable_Front_Camera_Controls();
-    }
-
+    measurement.is[current_index * 2 + 1].max_distance = value;
+    measurement.Save_Settings(current_index * 2 + 1, product_type[current_index].vision_ini_back);
 }
 
 void MainWindow::On_Action_Bypass_Results()
@@ -1287,37 +1398,50 @@ void MainWindow::On_Action_Bypass_Results()
     {
         bypass_result = false;
     }
-
-
 }
 
 void MainWindow::On_Action_Clear_Alarm()
 {
-    if (fail_alarmed)
+    if (front_fail_alarmed)
     {
         // Clear the current alarm state if this is triggered
-        fail_alarmed = false;
-        consecutive_fail = 0;
-        lj.Set_Fail_Status(0);
+        front_fail_alarmed = false;
+        front_consecutive_fail = 0;
+        lj.Set_Front_Fail_Status(0);
     }
-
+    if (back_fail_alarmed)
+    {
+        back_fail_alarmed = false;
+        back_consecutive_fail = 0;
+        lj.Set_Back_Fail_Status(0);
+    }
 }
 
-void MainWindow::On_Camera_Shutter_Changed(int value)
+void MainWindow::On_Front_Camera_Shutter_Changed(int value)
 {
-    front_m.is[ui->Front_Type->currentIndex()].camera_shutter = value;
+    QString current_product = ui->Product_Type->currentText();
+    int current_index = ui->Product_Type->findText(current_product);
 
-    if (ui->actionEnable_Front_Camera_2->isChecked())
-    {
-        vw.Set_Exposure(0, value);
-    }
-    else if (ui->actionEnable_Back_Camera->isChecked())
-    {
-        vw.Set_Exposure(1, value);
-    }
+    // remember to multiply by 2 since 2 slots are reserved for each product
+    measurement.is[2*current_index].camera_shutter = value;
+    vw.Set_Exposure(FRONT_CAM, value);
 
-    front_m.Save_Settings(ui->Front_Type->currentIndex(), product_type[ui->Front_Type->currentIndex()].vision_ini);
+    qDebug() << "Front shutter settings saved:" <<  product_type[current_index].vision_ini_front;
+    measurement.Save_Settings(current_index * 2, product_type[current_index].vision_ini_front);
+}
 
+void MainWindow::On_Back_Camera_Shutter_Changed(int value)
+{
+    QString current_product = ui->Product_Type->currentText();
+    int current_index = ui->Product_Type->findText(current_product);
+
+    // remember to multiply by 2 since 2 slots are reserved for each product, offset by one to indicate back camera
+    measurement.is[2*current_index + 1].camera_shutter = value;
+    //vw.Set_Exposure(BACK_CAM, value);
+
+    qDebug() << "Back shutter settings saved:" <<  product_type[current_index].vision_ini_back;
+
+    measurement.Save_Settings(current_index * 2 + 1, product_type[current_index].vision_ini_back);
 }
 
 

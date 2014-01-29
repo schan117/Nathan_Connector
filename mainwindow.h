@@ -43,6 +43,7 @@ public:
 
     void Display_Front_Settings(int index);
     void Display_Back_Settings(int index);
+    void Display_Settings(int product_index);
 
     void Disable_Manual_Controls();
     void Enable_Manual_Controls();
@@ -61,13 +62,16 @@ public:
 public slots:
 
     void On_Frame_Received(int camera_index);
-    void On_Front_Type_Changed(int type);
-    void On_Front_Start();
-    void On_Front_Stop();
+    void On_Product_Type_Changed(int index);
+    void On_Start();
+    void On_Stop();
     void On_Front_Learn();
+    void On_Back_Learn();
     void On_Delay_State_Changed();
     void On_Front_Locator_Threshold_Changed(int value);
     void On_Front_Locator_Threshold_Finished();
+    void On_Back_Locator_Threshold_Changed(int value);
+    void On_Back_Locator_Threshold_Finished();
     void On_Action_Quit();
     void On_Action_Register_Lot_Number();
     void On_Action_Select_Output_Folder();
@@ -76,12 +80,14 @@ public slots:
     void On_Action_Counter_Reset();
     void On_Green_Button_Triggered();
     void On_Red_Button_Triggered();
-    void On_Front_Min_Silver_Changed(double value);
-    void On_Front_Camera_State_Changed();
-    void On_Back_Camera_State_Changed();
+    void On_Front_Min_Distance_Changed(double value);
+    void On_Front_Max_Distance_Changed(double value);
+    void On_Back_Min_Distance_Changed(double value);
+    void On_Back_Max_Distance_Changed(double value);
     void On_Action_Bypass_Results();
     void On_Action_Clear_Alarm();
-    void On_Camera_Shutter_Changed(int value);
+    void On_Front_Camera_Shutter_Changed(int value);
+    void On_Back_Camera_Shutter_Changed(int value);
 
 
 
@@ -106,7 +112,8 @@ private:
 
     Product_Type* product_type;
 
-    bool learn_color_on_next_capture;
+    bool learn_front_color_on_next_capture;
+    bool learn_back_color_on_next_capture;
 
     long front_inspection_count;
     long back_inspection_count;
@@ -116,10 +123,13 @@ private:
     long product_count;
 
     void Display_Front_Inspection_Results(int index);
-    void Display_Production_Status(int index);
-    void Display_NA_Inspection_Results();
-    void Log_and_Process_Results(int index);
-    void Log_Extraction_Error(int index);
+    void Display_Back_Inspection_Results(int index);
+    void Display_Front_Production_Status(int index);
+    void Display_Back_Production_Status(int index);
+    void Display_Front_NA_Inspection_Results();
+    void Display_Back_NA_Inspection_Results();
+    void Log_and_Process_Results(int calculated_index);
+    void Log_Extraction_Error();
 
     LJ_Wrapper lj;
     LJ_Thread lj_thread;
@@ -136,9 +146,12 @@ private:
     QFile output_file;
     QTextStream output_stream;
 
-    long consecutive_fail;
-    bool prev_result;
-    bool fail_alarmed;
+    long front_consecutive_fail;
+    long back_consecutive_fail;
+    bool front_prev_result;
+    bool back_prev_result;
+    bool front_fail_alarmed;
+    bool back_fail_alarmed;
 
 
 };
