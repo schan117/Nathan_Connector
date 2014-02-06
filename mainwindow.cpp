@@ -287,9 +287,6 @@ void MainWindow::On_Frame_Received(int camera_index)
     // clear result window for every new inspection cycle
      ui->Results->clear();
 
-
-    // if reach here, either use_front or use_back is 1, BUT only one of them!!!
-
     if (product_type[product_index].use_front)
     {
         measurement.Set_Image(vw.internal_image_rgb[FRONT_CAM]);
@@ -336,7 +333,7 @@ void MainWindow::On_Frame_Received(int camera_index)
 
             if (ready_and_do_data_logging)
             {
-                Log_Extraction_Error();
+                Log_Extraction_Error(product_index * 2);
             }
         }
     }
@@ -383,11 +380,11 @@ void MainWindow::On_Frame_Received(int camera_index)
         }
         else
         {
-            Display_Front_NA_Inspection_Results();
+            Display_Back_NA_Inspection_Results();
 
             if (ready_and_do_data_logging)
             {
-                Log_Extraction_Error();
+                Log_Extraction_Error(product_index * 2 + 1);
             }
         }
     }
@@ -537,15 +534,15 @@ void MainWindow::Display_Front_NA_Inspection_Results()
 {
     if (measurement.result[0] == NO_LOCATOR)
     {
-        ui->Results->append(tr("Error #1: No locator found! Check locator sensitivity settings."));
+        ui->Results->append(tr("Front Error #1: No locator found! Check locator sensitivity settings."));
     }
     else if (measurement.result[0] == LOCATOR_INVALID)
     {
-        ui->Results->append(tr("Error #2: Locator all invalid! Check locator sensitivity settings."));
+        ui->Results->append(tr("Front Error #2: Locator all invalid! Check locator sensitivity settings."));
     }
     else if (measurement.result[0] == ROI_INVALID)
     {
-        ui->Results->append(tr("Error #3: Roi's of of screen."));
+        ui->Results->append(tr("Front Error #3: Roi's of of screen."));
     }
 
     ui->H_Front->setPixmap(QPixmap());
@@ -570,15 +567,15 @@ void MainWindow::Display_Back_NA_Inspection_Results()
 {
     if (measurement.result[0] == NO_LOCATOR)
     {
-        ui->Results->append(tr("Error #1: No locator found! Check locator sensitivity settings."));
+        ui->Results->append(tr("Back Error #1: No locator found! Check locator sensitivity settings."));
     }
     else if (measurement.result[0] == LOCATOR_INVALID)
     {
-        ui->Results->append(tr("Error #2: Locator all invalid! Check locator sensitivity settings."));
+        ui->Results->append(tr("Back Error #2: Locator all invalid! Check locator sensitivity settings."));
     }
     else if (measurement.result[0] == ROI_INVALID)
     {
-        ui->Results->append(tr("Error #3: Roi's of of screen."));
+        ui->Results->append(tr("Back Error #3: Roi's of of screen."));
     }
 
     ui->H_Back->setPixmap(QPixmap());
@@ -1240,7 +1237,7 @@ void MainWindow::Log_and_Process_Results(int calculated_index)
 
 }
 
-void MainWindow::Log_Extraction_Error()
+void MainWindow::Log_Extraction_Error(int calculated_index)
 {
     output_file.open(QIODevice::ReadWrite | QIODevice::Append | QIODevice::Text);
 
@@ -1265,7 +1262,22 @@ void MainWindow::Log_Extraction_Error()
         error_string = "Material Out Of Screen";
     }
 
-    output_stream << date_string << ":\tError: " << measurement.result[0] << "\t" << error_string << "\n\r";
+    bool is_front = false;
+
+    if ((calculated_index % 2) == 0)
+    {
+        // that is, it is a front capture
+        is_front = true;
+    }
+
+    if (is_front)
+    {
+        output_stream << date_string << ":\tFront Camera Error: " << measurement.result[0] << "\t" << error_string << "\n\r";
+    }
+    else
+    {
+        output_stream << date_string << ":\tBack Camera Error: " << measurement.result[0] << "\t" << error_string << "\n\r";
+    }
 
     output_file.close();
 }
@@ -1342,6 +1354,10 @@ void MainWindow::On_Green_Button_Triggered()
     {
         ui->actionStart_Data_Logging->setChecked(false);
         ui->statusbar->showMessage(tr("Data logging stopped!"));
+    }
+    else
+    {
+        qDebug() << "Camera not started!";
     }
 }
 

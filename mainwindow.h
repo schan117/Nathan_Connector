@@ -128,7 +128,7 @@ private:
     void Display_Front_NA_Inspection_Results();
     void Display_Back_NA_Inspection_Results();
     void Log_and_Process_Results(int calculated_index);
-    void Log_Extraction_Error();
+    void Log_Extraction_Error(int calculated_index);
 
     LJ_Wrapper lj;
     LJ_Thread lj_thread;
