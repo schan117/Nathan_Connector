@@ -126,7 +126,7 @@ bool Measurement::Save_Settings(int index, QString filename)
 	set.setValue("Decision/Fail_Threshold", is[index].fail_threshold);
 	set.setValue("Camera/Shutter", is[index].camera_shutter);
 
-    qDebug("Settings saved for index %d!", index);
+    qDebug("Settings saved for calculated index %d!", index);
 	
 	return true;
 
@@ -1431,7 +1431,13 @@ bool Measurement::Calculate_By_Locator_Method(int calculated_index, int thresh)
     }
 
     // Now connector tops contain all contour indices that are needed for inspection
+    // First check how many connectors are there
 
+    if (connector_tops.count() > MAX_ROI_COUNT)
+    {
+        result[0] = TOO_MANY_ROI;
+        return false;
+    }
 
     cvtColor(internal_image, image_hsv, CV_BGR2HSV);
     split(image_hsv, hsv);

@@ -8,7 +8,7 @@ QT       += core gui testlib
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
-TARGET = Connector_Inspection
+TARGET = Connector_Inspection_v2
 TEMPLATE = app
 
 CONFIG += console

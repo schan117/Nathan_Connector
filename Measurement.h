@@ -18,9 +18,11 @@
 #define	CAL_OK			1
 #define	NO_LOCATOR		2
 #define	LOCATOR_INVALID	3	
-#define	ROI_INVALID		4			
+#define	ROI_INVALID		4
+#define TOO_MANY_ROI    5
 
 #define MAX_PRODUCT_COUNT   10
+#define MAX_ROI_COUNT   10
 
 
 struct Inspection_Settings
@@ -104,7 +106,7 @@ public:
 	Mat image_hsv;
 	Mat hsv[3];
 
-	double result[20];
+    double result[100];
 
     Inspection_Settings is[MAX_PRODUCT_COUNT*2];
 

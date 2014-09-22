@@ -12,9 +12,7 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);;
 
-
-
-    this->setWindowTitle(tr("Connector Inspection Terminal"));
+    this->setWindowTitle(tr("Connector Inspection Terminal v2"));
 
         learn_front_color_on_next_capture = false;
         learn_back_color_on_next_capture = false;
@@ -65,6 +63,7 @@ MainWindow::MainWindow(QWidget *parent) :
         else
         {
             qDebug() << "Not using labjack!";
+
         }
 
         if (Initialize_Vimba_System())
@@ -146,7 +145,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
         this->showMaximized();
 
-        if (labjack_ok)
+        if (labjack_ok && use_labjack)
         {
             qDebug("Start labjack thread!");
             lj_thread.start();
@@ -191,6 +190,8 @@ MainWindow::~MainWindow()
     }
 
     delete [] product_type;
+
+
     delete ui;
 }
 
@@ -322,6 +323,7 @@ void MainWindow::On_Frame_Received(int camera_index)
 
                 Display_Front_Settings(product_index);
 
+                qWarning() << "Learn front for calculated index of:" << 2 * product_index;
                 measurement.Save_Settings(2 * product_index, product_type[product_index].vision_ini_front);
                 learn_front_color_on_next_capture = false;
             }
@@ -373,6 +375,7 @@ void MainWindow::On_Frame_Received(int camera_index)
 
                 Display_Back_Settings(product_index);
 
+                qWarning() << "Learn back for calculated index of:" << 2 * product_index + 1;
                 measurement.Save_Settings(2 * product_index + 1, product_type[product_index].vision_ini_back);
                 learn_back_color_on_next_capture = false;
             }
@@ -544,6 +547,10 @@ void MainWindow::Display_Front_NA_Inspection_Results()
     {
         ui->Results->append(tr("Front Error #3: Roi's of of screen."));
     }
+    else if (measurement.result[0] == TOO_MANY_ROI)
+    {
+        ui->Results->append(tr("Front Error #4: Too Many Rois."));
+    }
 
     ui->H_Front->setPixmap(QPixmap());
     ui->S_Front->setPixmap(QPixmap());
@@ -576,6 +583,10 @@ void MainWindow::Display_Back_NA_Inspection_Results()
     else if (measurement.result[0] == ROI_INVALID)
     {
         ui->Results->append(tr("Back Error #3: Roi's of of screen."));
+    }
+    else if (measurement.result[0] == TOO_MANY_ROI)
+    {
+        ui->Results->append(tr("Back Error #4: Too Many Rois."));
     }
 
     ui->H_Back->setPixmap(QPixmap());
@@ -667,15 +678,17 @@ bool MainWindow::Load_Settings()
     QSettings set("settings/settings.ini", QSettings::IniFormat);
 
     product_count = set.value("Main/Product_Count").toInt(&ok);
+    qDebug() << "Product Count:" << product_count;
     if (!ok) return false;
 
     use_labjack = set.value("Main/Use_Labjack").toInt(&ok);
+    qDebug() << "Use labjack:" << use_labjack;
     if (!ok) return false;
 
     product_type = new Product_Type[product_count];
 
     for (int i=0; i<product_count; i++)
-    {\
+    {
         product_type[i].index = i;
         product_type[i].name = set.value(QString("Product%1/Name").arg(i)).toString();
         ui->Product_Type->addItem(product_type[i].name);
@@ -690,6 +703,7 @@ bool MainWindow::Load_Settings()
     }
 
     output_folder = set.value("Main/Output_Folder").toString();
+    qWarning() << "Initialize output folder to:" << output_folder;
 
     return true;
 }
@@ -948,6 +962,7 @@ void MainWindow::On_Front_Locator_Threshold_Finished()
     QString current_product = ui->Product_Type->currentText();
     int current_index = ui->Product_Type->findText(current_product);
 
+    qWarning() << "Front locator threshold changed, save settings for index:" << current_index * 2;
     measurement.Save_Settings(current_index * 2, product_type[current_index].vision_ini_front);
 }
 
@@ -955,6 +970,7 @@ void MainWindow::On_Back_Locator_Threshold_Changed(int value)
 {
     QString current_product = ui->Product_Type->currentText();
     int current_index = ui->Product_Type->findText(current_product);
+
 
     measurement.is[current_index * 2 + 1].locator_threshold = value;
 }
@@ -964,6 +980,7 @@ void MainWindow::On_Back_Locator_Threshold_Finished()
     QString current_product = ui->Product_Type->currentText();
     int current_index = ui->Product_Type->findText(current_product);
 
+    qWarning() << "Back locator threshold changed, save settings for index:" << current_index * 2 + 1;
     measurement.Save_Settings(current_index * 2 + 1, product_type[current_index].vision_ini_back);
 }
 
@@ -974,14 +991,16 @@ void MainWindow::On_Action_Quit()
 
 void MainWindow::On_Action_Select_Output_Folder()
 {
-    QString ret = QFileDialog::getExistingDirectory(this, tr("Select output folder"));
+    QString ret = QFileDialog::getExistingDirectory(this, tr("Select output folder"), "C:/");
 
-    output_folder = ret;
+    if (ret != NULL)
+    {
+       output_folder = ret;
+       QSettings set("settings/settings.ini", QSettings::IniFormat);
+       set.setValue("Main/Output_Folder", output_folder);
 
-    QSettings set("settings/settings.ini", QSettings::IniFormat);
-
-    set.setValue("Main/Output_Folder", output_folder);
-
+       QMessageBox::information(this, "Output folder", QString("Output folder set to:\n%1").arg(output_folder), QMessageBox::Ok);
+    }
 }
 
 bool MainWindow::Register_Lot_Number()
@@ -1190,11 +1209,16 @@ void MainWindow::Display_Back_Production_Status(int index)
 void MainWindow::Log_and_Process_Results(int calculated_index)
 {
 
+    QFile file(file_path);
+
     // add both front and back logging here
+    bool ok = file.open(QIODevice::ReadWrite | QIODevice::Append | QIODevice::Text);
+    if (!ok)
+    {
+        qWarning() << "Cannot open for writing normal results for file:" << file_path;
+    }
 
-    output_file.open(QIODevice::ReadWrite | QIODevice::Append | QIODevice::Text);
-
-    output_stream.setDevice(&output_file);
+    QTextStream qts(&file);
 
     QDateTime qdt = QDateTime::currentDateTime();
 
@@ -1225,23 +1249,29 @@ void MainWindow::Log_and_Process_Results(int calculated_index)
 
     if (is_front)
     {
-        output_stream << date_string << ":\t" << ui->Product_Type->currentText() << "\t" << "Front Camera\t" << avg << " mm, Min: " << measurement.is[calculated_index].min_distance << " mm, Max: " << measurement.is[calculated_index].max_distance << "\t" << result << "\n\r";
+        qts << date_string << ":\t" << ui->Product_Type->currentText() << "\t" << "Front Camera\t" << avg << " mm, Min: " << measurement.is[calculated_index].min_distance << " mm, Max: " << measurement.is[calculated_index].max_distance << "\t" << result << "\n\r";
     }
     else
     {
-         output_stream << date_string << ":\t" << ui->Product_Type->currentText() << "\t" << "Back Camera\t" << avg << " mm, Min: " << measurement.is[calculated_index].min_distance << " mm, Max: " << measurement.is[calculated_index].max_distance << "\t" << result << "\n\r";
+         qts << date_string << ":\t" << ui->Product_Type->currentText() << "\t" << "Back Camera\t" << avg << " mm, Min: " << measurement.is[calculated_index].min_distance << " mm, Max: " << measurement.is[calculated_index].max_distance << "\t" << result << "\n\r";
     }
 
-    output_file.close();
+    file.close();
 
 
 }
 
 void MainWindow::Log_Extraction_Error(int calculated_index)
 {
-    output_file.open(QIODevice::ReadWrite | QIODevice::Append | QIODevice::Text);
+    QFile file(file_path);
 
-    output_stream.setDevice(&output_file);
+    bool ok = file.open(QIODevice::ReadWrite | QIODevice::Append | QIODevice::Text);
+    if (!ok)
+    {
+        qWarning() << "Cannot open for writing normal exraction error for file:" << file_path;
+    }
+
+    QTextStream qts(&file);
 
     QDateTime qdt = QDateTime::currentDateTime();
 
@@ -1261,6 +1291,10 @@ void MainWindow::Log_Extraction_Error(int calculated_index)
     {
         error_string = "Material Out Of Screen";
     }
+    else if (measurement.result[0] == TOO_MANY_ROI)
+    {
+        error_string = "Too Many ROI";
+    }
 
     bool is_front = false;
 
@@ -1272,14 +1306,14 @@ void MainWindow::Log_Extraction_Error(int calculated_index)
 
     if (is_front)
     {
-        output_stream << date_string << ":\tFront Camera Error: " << measurement.result[0] << "\t" << error_string << "\n\r";
+        qts << date_string << ":\tFront Camera Error: " << measurement.result[0] << "\t" << error_string << "\n\r";
     }
     else
     {
-        output_stream << date_string << ":\tBack Camera Error: " << measurement.result[0] << "\t" << error_string << "\n\r";
+        qts << date_string << ":\tBack Camera Error: " << measurement.result[0] << "\t" << error_string << "\n\r";
     }
 
-    output_file.close();
+    file.close();
 }
 
 void MainWindow::On_Action_Start_Data_Logging(bool toggled)
@@ -1290,14 +1324,14 @@ void MainWindow::On_Action_Start_Data_Logging(bool toggled)
         {
             if (Register_Lot_Number())
             {
-                ready_and_do_data_logging = true;
-
                 // open file stream and get ready to write data
 
-                QString path = output_folder + "/" + lot_number + "/Results.txt";
-                output_file.setFileName(path);
+                file_path = output_folder + "/" + lot_number + "/Results.txt";
+                qWarning() << "Generate file and path:" << file_path;
 
                 lj.Set_Ready_Status(1);
+
+                ready_and_do_data_logging = true;
             }
             else
             {
@@ -1347,13 +1381,15 @@ void MainWindow::On_Green_Button_Triggered()
 
     if (camera_thread.isRunning() && !ready_and_do_data_logging)
     {
-            ui->actionStart_Data_Logging->setChecked(true);
-            ui->statusbar->showMessage(tr("Data logging started!"));
+        ui->actionStart_Data_Logging->setChecked(true);
+        ui->statusbar->showMessage(tr("Data logging started!"));
+        qWarning() << "--------------- Data Logging Started!";
     }
     else if (camera_thread.isRunning() && ready_and_do_data_logging)
     {
         ui->actionStart_Data_Logging->setChecked(false);
         ui->statusbar->showMessage(tr("Data logging stopped!"));
+        qWarning() << "------------------- Data Logging Stopped!";
     }
     else
     {
@@ -1372,6 +1408,8 @@ void MainWindow::On_Front_Min_Distance_Changed(double value)
     int current_index = ui->Product_Type->findText(current_product);
 
     measurement.is[current_index * 2].min_distance = value;
+
+    qWarning() << "Front min distance changed, save settings for index:" << current_index * 2;
     measurement.Save_Settings(current_index * 2, product_type[current_index].vision_ini_front);
 }
 
@@ -1381,6 +1419,8 @@ void MainWindow::On_Front_Max_Distance_Changed(double value)
     int current_index = ui->Product_Type->findText(current_product);
 
     measurement.is[current_index * 2].max_distance = value;
+
+    qWarning() << "Front max distance changed, save settings for index:" << current_index * 2;
     measurement.Save_Settings(current_index * 2, product_type[current_index].vision_ini_front);
 }
 
@@ -1390,6 +1430,8 @@ void MainWindow::On_Back_Min_Distance_Changed(double value)
     int current_index = ui->Product_Type->findText(current_product);
 
     measurement.is[current_index * 2 + 1].min_distance = value;
+
+    qWarning() << "Back min distance changed, save settings for index:" << current_index * 2 + 1;
     measurement.Save_Settings(current_index * 2 + 1, product_type[current_index].vision_ini_back);
 }
 
@@ -1399,6 +1441,8 @@ void MainWindow::On_Back_Max_Distance_Changed(double value)
     int current_index = ui->Product_Type->findText(current_product);
 
     measurement.is[current_index * 2 + 1].max_distance = value;
+
+    qWarning() << "Back max distance changed, save settings for index:" << current_index * 2 + 1;
     measurement.Save_Settings(current_index * 2 + 1, product_type[current_index].vision_ini_back);
 }
 
@@ -1440,7 +1484,7 @@ void MainWindow::On_Front_Camera_Shutter_Changed(int value)
     measurement.is[2*current_index].camera_shutter = value;
     vw.Set_Exposure(FRONT_CAM, value);
 
-    qDebug() << "Front shutter settings saved:" <<  product_type[current_index].vision_ini_front;
+    qDebug() << "Front shutter settings saved:" <<  product_type[current_index].vision_ini_front << "for index:" << current_index * 2;
     measurement.Save_Settings(current_index * 2, product_type[current_index].vision_ini_front);
 }
 
@@ -1451,9 +1495,9 @@ void MainWindow::On_Back_Camera_Shutter_Changed(int value)
 
     // remember to multiply by 2 since 2 slots are reserved for each product, offset by one to indicate back camera
     measurement.is[2*current_index + 1].camera_shutter = value;
-    //vw.Set_Exposure(BACK_CAM, value);
+    vw.Set_Exposure(BACK_CAM, value);
 
-    qDebug() << "Back shutter settings saved:" <<  product_type[current_index].vision_ini_back;
+    qDebug() << "Back shutter settings saved:" <<  product_type[current_index].vision_ini_back << "for index:" << current_index * 2 + 1;
 
     measurement.Save_Settings(current_index * 2 + 1, product_type[current_index].vision_ini_back);
 }

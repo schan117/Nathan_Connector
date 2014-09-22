@@ -142,8 +142,8 @@ private:
     bool ready_and_do_data_logging;
     bool bypass_result;
 
-    QFile output_file;
-    QTextStream output_stream;
+    //QFile output_file;
+    //QTextStream output_stream;
 
     long front_consecutive_fail;
     long back_consecutive_fail;
@@ -153,6 +153,8 @@ private:
     bool back_fail_alarmed;
 
     bool Register_Lot_Number();
+
+    QString file_path;
 
 
 };
