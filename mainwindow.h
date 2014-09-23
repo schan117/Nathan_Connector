@@ -89,6 +89,8 @@ public slots:
     void On_Front_Camera_Shutter_Changed(int value);
     void On_Back_Camera_Shutter_Changed(int value);
     void On_Action_Aux_Viewer();
+    void On_Aux_Viewer_Front_Settings_Changed();
+    void On_Aux_Viewer_Back_Settings_Changed();
 
 
 
@@ -110,6 +112,8 @@ private:
     Camera_Thread	camera_thread;
 
     void Display_Image(QLabel* view, uchar* data, int width, int height);
+    void Display_Front_Aux_Images(int index);
+    void Display_Back_Aux_Images(int index);
 
     Product_Type* product_type;
 

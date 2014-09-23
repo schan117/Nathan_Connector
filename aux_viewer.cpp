@@ -34,3 +34,63 @@ void Aux_Viewer::Display_Image(QLabel *view, uchar *data, int width, int height)
 
     view->setPixmap(qp);
 }
+
+void Aux_Viewer::on_Front_Aux0_Minimum_Width_valueChanged(double arg1)
+{
+    emit Front_Aux_Settings_Changed();
+}
+
+void Aux_Viewer::on_Front_Aux0_Maximum_Width_valueChanged(double arg1)
+{
+    emit Front_Aux_Settings_Changed();
+}
+
+void Aux_Viewer::on_Front_Aux1_Minimum_Width_valueChanged(double arg1)
+{
+    emit Front_Aux_Settings_Changed();
+}
+
+void Aux_Viewer::on_Front_Aux1_Maximum_Width_valueChanged(double arg1)
+{
+    emit Front_Aux_Settings_Changed();
+}
+
+void Aux_Viewer::on_Front_Aux1_Minimum_Height_valueChanged(double arg1)
+{
+    emit Front_Aux_Settings_Changed();
+}
+
+void Aux_Viewer::on_Front_Aux1_Maximum_Height_valueChanged(double arg1)
+{
+    emit Front_Aux_Settings_Changed();
+}
+
+void Aux_Viewer::on_Back_Aux0_Minimum_Width_valueChanged(double arg1)
+{
+
+}
+
+void Aux_Viewer::on_Back_Aux0_Maximum_Width_valueChanged(double arg1)
+{
+
+}
+
+void Aux_Viewer::on_Back_Aux1_Minimum_Width_valueChanged(double arg1)
+{
+
+}
+
+void Aux_Viewer::on_Back_Aux1_Maximum_Width_valueChanged(double arg1)
+{
+
+}
+
+void Aux_Viewer::on_Back_Aux1_Minimum_Height_valueChanged(double arg1)
+{
+
+}
+
+void Aux_Viewer::on_Back_Aux1_Maximum_Height_valueChanged(double arg1)
+{
+
+}

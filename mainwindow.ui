@@ -340,7 +340,7 @@
                 <string> mm</string>
                </property>
                <property name="maximum">
-                <double>3.000000000000000</double>
+                <double>6.000000000000000</double>
                </property>
                <property name="singleStep">
                 <double>0.020000000000000</double>
@@ -367,7 +367,7 @@
                 <string> mm</string>
                </property>
                <property name="maximum">
-                <double>3.000000000000000</double>
+                <double>6.000000000000000</double>
                </property>
                <property name="singleStep">
                 <double>0.020000000000000</double>
@@ -599,7 +599,7 @@
                 <string> mm</string>
                </property>
                <property name="maximum">
-                <double>3.000000000000000</double>
+                <double>6.000000000000000</double>
                </property>
                <property name="singleStep">
                 <double>0.020000000000000</double>
@@ -626,7 +626,7 @@
                 <string> mm</string>
                </property>
                <property name="maximum">
-                <double>3.000000000000000</double>
+                <double>6.000000000000000</double>
                </property>
                <property name="singleStep">
                 <double>0.020000000000000</double>

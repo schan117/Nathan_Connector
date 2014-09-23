@@ -17,6 +17,8 @@
 #define MAX_PRODUCT_COUNT   10
 #define MAX_ROI_COUNT   10
 
+#include <QString>
+
 struct Inspection_Settings
 {
     // basic parameters
@@ -47,6 +49,7 @@ struct Inspection_Settings
 
     // extended parameters
     bool is_extended_type;
+    QString extended_type;
     int roi_x_offset;
     int roi_x_offset_width;
     int minimum_x_distance_from_image_left_edge;
@@ -58,6 +61,11 @@ struct Inspection_Settings
     int aux_roi_y_height[MAX_ROI_COUNT];
     int aux_roi_h_tolerance[MAX_ROI_COUNT];
     int aux_roi_s_tolerance[MAX_ROI_COUNT];
+    double aux_minimum_width[MAX_ROI_COUNT];
+    double aux_maximum_width[MAX_ROI_COUNT];
+    double aux_minimum_height[MAX_ROI_COUNT];
+    double aux_maximum_height[MAX_ROI_COUNT];
+
 
     Inspection_Settings()
     {
@@ -90,6 +98,7 @@ struct Inspection_Settings
         roi_x_offset_width = 0;
         minimum_x_distance_from_image_left_edge = 0;
         is_threshold_inverted = 0;
+        extended_type = "";
 
 
     }

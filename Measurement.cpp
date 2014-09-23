@@ -97,46 +97,48 @@ bool Measurement::Load_Settings(int index, QString filename)
 
     QString qs = set.value("Main/Type").toString();
 
-    if (qs == "Extended")
+    if (qs == "Extended_Type0")
     {
-        qDebug() << "Extended type detected!";
+        qDebug() << "Extended_Type0 detected!";
         // if it is really an extended parameter file, load them in
+
+        is[index].extended_type = qs;
 
         is[index].is_extended_type = true;
 
-        is[index].is_threshold_inverted = set.value("Locator_Ex/Is_Threshold_Inverted").toInt(&ok);
+        is[index].is_threshold_inverted = set.value("Locator_Ex_Type0/Is_Threshold_Inverted").toInt(&ok);
         if (!ok) return false;
 
-        is[index].minimum_x_distance_from_image_left_edge = set.value("Locator_Ex/Minimum_X_Distance_From_Image_Left_Edge").toInt(&ok);
+        is[index].minimum_x_distance_from_image_left_edge = set.value("Locator_Ex_Type0/Minimum_X_Distance_From_Image_Left_Edge").toInt(&ok);
         if (!ok) return false;
 
-        is[index].roi_x_offset = set.value("ROI_Ex/X_Offset").toInt(&ok);
+        is[index].roi_x_offset = set.value("ROI_Ex_Type0/X_Offset").toInt(&ok);
         if (!ok) return false;
 
-        is[index].roi_x_offset_width = set.value("ROI_Ex/X_Offset_Width").toInt(&ok);
+        is[index].roi_x_offset_width = set.value("ROI_Ex_Type0/X_Offset_Width").toInt(&ok);
         if (!ok) return false;
 
-        is[index].aux_roi_count = set.value("Aux_ROI_Ex/Count").toInt(&ok);
+        is[index].aux_roi_count = set.value("Aux_ROI_Ex_Type0/Count").toInt(&ok);
         if (!ok) return false;
 
         for (int i=0; i< is[index].aux_roi_count; i++)
         {
-            is[index].aux_roi_x_offset[i] = set.value(QString("Aux_ROI_Ex/Aux%1_X_Offset").arg(i)).toInt(&ok);
+            is[index].aux_roi_x_offset[i] = set.value(QString("Aux_ROI_Ex_Type0/Aux%1_X_Offset").arg(i)).toInt(&ok);
             if (!ok) return false;
 
-            is[index].aux_roi_y_offset[i] = set.value(QString("Aux_ROI_Ex/Aux%1_Y_Offset").arg(i)).toInt(&ok);
+            is[index].aux_roi_y_offset[i] = set.value(QString("Aux_ROI_Ex_Type0/Aux%1_Y_Offset").arg(i)).toInt(&ok);
             if (!ok) return false;
 
-            is[index].aux_roi_x_width[i] = set.value(QString("Aux_ROI_Ex/Aux%1_X_Width").arg(i)).toInt(&ok);
+            is[index].aux_roi_x_width[i] = set.value(QString("Aux_ROI_Ex_Type0/Aux%1_X_Width").arg(i)).toInt(&ok);
             if (!ok) return false;
 
-            is[index].aux_roi_y_height[i] = set.value(QString("Aux_ROI_Ex/Aux%1_Y_Height").arg(i)).toInt(&ok);
+            is[index].aux_roi_y_height[i] = set.value(QString("Aux_ROI_Ex_Type0/Aux%1_Y_Height").arg(i)).toInt(&ok);
             if (!ok) return false;
 
-            is[index].aux_roi_h_tolerance[i] = set.value(QString("Aux_ROI_Ex/Aux%1_H_Tolerance").arg(i)).toInt(&ok);
+            is[index].aux_roi_h_tolerance[i] = set.value(QString("Aux_ROI_Ex_Type0/Aux%1_H_Tolerance").arg(i)).toInt(&ok);
             if (!ok) return false;
 
-            is[index].aux_roi_s_tolerance[i] = set.value(QString("Aux_ROI_Ex/Aux%1_S_Tolerance").arg(i)).toInt(&ok);
+            is[index].aux_roi_s_tolerance[i] = set.value(QString("Aux_ROI_Ex_Type0/Aux%1_S_Tolerance").arg(i)).toInt(&ok);
             if (!ok) return false;
         }
 
@@ -176,6 +178,19 @@ bool Measurement::Save_Settings(int index, QString filename)
     set.setValue("Decision/Max_Distance", is[index].max_distance);
 	set.setValue("Decision/Fail_Threshold", is[index].fail_threshold);
 	set.setValue("Camera/Shutter", is[index].camera_shutter);
+
+    if (is[index].is_extended_type)
+    {
+        if (is[index].extended_type == "Extended_Type0")
+        {
+            set.setValue("Decision_Ex_Type0/Aux0_Min_Width", is[index].aux_minimum_width[0]);
+            set.setValue("Decision_Ex_Type0/Aux0_Max_Width", is[index].aux_maximum_width[0]);
+            set.setValue("Decision_Ex_Type0/Aux1_Min_Width", is[index].aux_minimum_width[1]);
+            set.setValue("Decision_Ex_Type0/Aux1_Max_Width", is[index].aux_maximum_width[1]);
+            set.setValue("Decision_Ex_Type0/Aux1_Min_Height", is[index].aux_minimum_height[1]);
+            set.setValue("Decision_Ex_Type0/Aux1_Max_Height", is[index].aux_maximum_height[1]);
+        }
+    }
 
     qDebug("Settings saved for calculated index %d!", index);
 	
@@ -2008,6 +2023,8 @@ bool Measurement::Calculate_By_Locator_Method_Ex(int calculated_index, int thres
     // go through the list and extract!
 
     result_ex.clear();
+    result_ex.append(locator_holes_rects.size());
+    result_ex.append(is[calculated_index].aux_roi_count);
 
     for (int i=0; i<locator_holes_rects.size(); i++)
     {
@@ -2031,19 +2048,19 @@ bool Measurement::Calculate_By_Locator_Method_Ex(int calculated_index, int thres
                    // for the first work piece, get a sample for in range image as well
 
                    // range image
-                   cvtColor(in_range_image, aux_extraction_image[0], CV_GRAY2RGB);
+                   cvtColor(in_range_image, aux_extraction_image[j], CV_GRAY2RGB);
 
                    // color image
-                   Mat temp_image = internal_image(aux_roi[0][0]).clone();
-                   cvtColor(temp_image, aux_color_image[0], CV_BGR2RGB);
-                   rectangle(aux_color_image[0], Rect(rect.x, rect.y, rect.width, rect.height), Scalar(255,0,0), 1);
+                   Mat temp_image = internal_image(aux_roi[i][j]).clone();
+                   cvtColor(temp_image, aux_color_image[j], CV_BGR2RGB);
+                   rectangle(aux_color_image[j], Rect(rect.x, rect.y, rect.width, rect.height), Scalar(255,0,0), 1);
                }
 
 
            }
 
-           result_ex.append(rect.width);
-           result_ex.append(rect.height);
+           result_ex.append(rect.width * is[calculated_index].mapping_ratio);
+           result_ex.append(rect.height * is[calculated_index].mapping_ratio);
         }
     }
 

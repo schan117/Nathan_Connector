@@ -233,6 +233,9 @@ void MainWindow::Connect_Signals()
 
     connect(ui->Product_Type, SIGNAL(currentIndexChanged(int)), this, SLOT(On_Product_Type_Changed(int)));
 
+    connect(&aux_view, SIGNAL(Front_Aux_Settings_Changed()), this, SLOT(On_Aux_Viewer_Front_Settings_Changed()));
+    connect(&aux_view, SIGNAL(Back_Aux_Settings_Changed()), this, SLOT(On_Aux_Viewer_Back_Settings_Changed()));
+
 }
 
 bool MainWindow::Initialize_Vimba_System()
@@ -301,8 +304,7 @@ void MainWindow::On_Frame_Received(int camera_index)
         // check if need to display aux images
         if (measurement.is[product_index * 2].is_extended_type)
         {
-            aux_view.Display_Image(aux_view.ui->Aux_0_Color, measurement.aux_color_image[0].data, measurement.aux_color_image[0].cols, measurement.aux_color_image[0].rows);
-            aux_view.Display_Image(aux_view.ui->Aux_0_In_Range, measurement.aux_extraction_image[0].data, measurement.aux_extraction_image[0].cols, measurement.aux_extraction_image[0].rows);
+            Display_Front_Aux_Images(product_index);
         }
 
         if (measurement.result[0] == CAL_OK)
@@ -640,6 +642,15 @@ void MainWindow::Display_Image(QLabel* view, uchar* data, int width, int height)
 
 }
 
+void MainWindow::Display_Front_Aux_Images(int index)
+{
+    if (measurement.is[2 * index].extended_type == "Extended_Type0")
+    {
+        aux_view.Display_Image(aux_view.ui->Front_Aux0_Color, measurement.aux_color_image[0].data, measurement.aux_color_image[0].cols, measurement.aux_color_image[0].rows);
+        aux_view.Display_Image(aux_view.ui->Front_Aux0_In_Range, measurement.aux_extraction_image[0].data, measurement.aux_extraction_image[0].cols, measurement.aux_extraction_image[0].rows);
+    }
+}
+
 void MainWindow::On_Product_Type_Changed(int index)
 {    
     if (product_type[index].use_front)
@@ -678,6 +689,10 @@ void MainWindow::On_Product_Type_Changed(int index)
     connect(ui->Back_Min_Distance, SIGNAL(valueChanged(double)), this, SLOT(On_Back_Min_Distance_Changed(double)));
     connect(ui->Back_Max_Distance, SIGNAL(valueChanged(double)), this, SLOT(On_Back_Max_Distance_Changed(double)));
     connect(ui->Camera_Shutter_Back, SIGNAL(valueChanged(int)), this, SLOT(On_Back_Camera_Shutter_Changed(int)));
+
+
+
+
 }
 
 bool MainWindow::Load_Settings()
@@ -761,6 +776,17 @@ void MainWindow::On_Start()
             qDebug() << "Set Camera Exposure:" << vw.Set_Exposure(BACK_CAM, shutter);
             qDebug() << "Set Camera Gain:" <<vw.Set_Gain(BACK_CAM, gain);
             qDebug() << "Set Image Format:" <<vw.Set_Image_Format(BACK_CAM, "RGB8Packed");
+        }
+
+        // depending on product type, we might need to enable/disable aux viewer
+        if ( (measurement.is[product_index * 2].extended_type == "Extended_Type0") ||
+             (measurement.is[product_index * 2 + 1].extended_type == "Extended_Type0" ) )
+        {
+            ui->actionAux_Viewer->setEnabled(true);
+        }
+        else
+        {
+            ui->actionAux_Viewer->setEnabled(false);
         }
 
 
@@ -1514,6 +1540,44 @@ void MainWindow::On_Back_Camera_Shutter_Changed(int value)
 void MainWindow::On_Action_Aux_Viewer()
 {
     aux_view.show();
+}
+
+void MainWindow::On_Aux_Viewer_Front_Settings_Changed()
+{
+    QString current_product = ui->Product_Type->currentText();
+    int current_index = ui->Product_Type->findText(current_product);
+
+    measurement.is[current_index * 2].aux_minimum_width[0] = aux_view.ui->Front_Aux0_Minimum_Width->value();
+    measurement.is[current_index * 2].aux_maximum_width[0] = aux_view.ui->Front_Aux0_Maximum_Width->value();
+
+    measurement.is[current_index * 2].aux_minimum_width[1] = aux_view.ui->Front_Aux1_Minimum_Width->value();
+    measurement.is[current_index * 2].aux_maximum_width[1] = aux_view.ui->Front_Aux1_Maximum_Width->value();
+
+    measurement.is[current_index * 2].aux_minimum_height[1] = aux_view.ui->Front_Aux1_Minimum_Height->value();
+    measurement.is[current_index * 2].aux_maximum_height[1] = aux_view.ui->Front_Aux1_Maximum_Height->value();
+
+
+    qWarning() << "Aux Viewer Front settings changed, save settings for index:" << current_index * 2;
+    measurement.Save_Settings(current_index * 2, product_type[current_index].vision_ini_front);
+}
+
+void MainWindow::On_Aux_Viewer_Back_Settings_Changed()
+{
+    QString current_product = ui->Product_Type->currentText();
+    int current_index = ui->Product_Type->findText(current_product);
+
+    measurement.is[current_index * 2 + 1].aux_minimum_width[0] = aux_view.ui->Back_Aux0_Minimum_Width->value();
+    measurement.is[current_index * 2 + 1].aux_maximum_width[0] = aux_view.ui->Back_Aux0_Maximum_Width->value();
+
+    measurement.is[current_index * 2 + 1].aux_minimum_width[1] = aux_view.ui->Back_Aux1_Minimum_Width->value();
+    measurement.is[current_index * 2 + 1].aux_maximum_width[1] = aux_view.ui->Back_Aux1_Maximum_Width->value();
+
+    measurement.is[current_index * 2 + 1].aux_minimum_height[1] = aux_view.ui->Back_Aux1_Minimum_Height->value();
+    measurement.is[current_index * 2 + 1].aux_maximum_height[1] = aux_view.ui->Back_Aux1_Maximum_Height->value();
+
+
+    qWarning() << "Aux Viewer Back settings changed, save settings for index:" << current_index * 2 + 1;
+    measurement.Save_Settings(current_index * 2 + 1, product_type[current_index].vision_ini_back);
 }
 
 
