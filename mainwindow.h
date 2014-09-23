@@ -9,6 +9,7 @@
 #include "LJ_Thread.h"
 #include <QLabel>
 #include <QTextStream>
+#include "aux_viewer.h"
 
 #define FRONT_CAM	0
 #define	BACK_CAM	1
@@ -87,6 +88,7 @@ public slots:
     void On_Action_Clear_Alarm();
     void On_Front_Camera_Shutter_Changed(int value);
     void On_Back_Camera_Shutter_Changed(int value);
+    void On_Action_Aux_Viewer();
 
 
 
@@ -155,6 +157,8 @@ private:
     bool Register_Lot_Number();
 
     QString file_path;
+
+    Aux_Viewer aux_view;
 
 
 };

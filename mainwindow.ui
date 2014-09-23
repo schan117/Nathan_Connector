@@ -276,7 +276,7 @@
            <item>
             <widget class="QSlider" name="Front_Threshold">
              <property name="minimum">
-              <number>100</number>
+              <number>1</number>
              </property>
              <property name="maximum">
               <number>255</number>
@@ -535,7 +535,7 @@
            <item>
             <widget class="QSlider" name="Back_Threshold">
              <property name="minimum">
-              <number>100</number>
+              <number>1</number>
              </property>
              <property name="maximum">
               <number>255</number>
@@ -873,6 +873,8 @@
     <property name="title">
      <string>Controls</string>
     </property>
+    <addaction name="actionAux_Viewer"/>
+    <addaction name="separator"/>
     <addaction name="actionActual_Counter_Reset"/>
     <addaction name="separator"/>
     <addaction name="actionDelay_Inspection"/>
@@ -964,6 +966,11 @@
   <action name="actionClear_Alarm">
    <property name="text">
     <string>Clear Alarm</string>
+   </property>
+  </action>
+  <action name="actionAux_Viewer">
+   <property name="text">
+    <string>Aux Viewer</string>
    </property>
   </action>
  </widget>

@@ -6,86 +6,14 @@
 #include "opencv2\highgui\highgui.hpp"
 //#include <float.h>
 #include <qmath.h>
+#include "Definitions.h"
 //#include <math.h>
-
-#define C1_FRONT	0
-#define C2_FRONT	1
-#define	C3_FRONT	2
-#define	C1_BACK		3
-#define	C2_BACK		4
-#define	C3_BACK		5
-
-#define	CAL_OK			1
-#define	NO_LOCATOR		2
-#define	LOCATOR_INVALID	3	
-#define	ROI_INVALID		4
-#define TOO_MANY_ROI    5
-
-#define MAX_PRODUCT_COUNT   10
-#define MAX_ROI_COUNT   10
-
-
-struct Inspection_Settings
-{
-	int locator_width;
-	int locator_height;
-	double locator_level_tolerance;
-	long minimum_area;
-	double length_tolerance;
-	int kernel;
-	double sigma;
-	int pre_morph_count;
-	double roi_width_reduction;
-	int roi_y_offset;
-	int roi_y_offset_height;
-    double upper_h;
-    double upper_s;
-    double lower_h;
-    double lower_s;
-	double mapping_ratio;
-	int locator_threshold;
-    double min_distance;
-    double max_distance;
-	int fail_threshold;
-	int camera_shutter;
-    int camera_gain;
-    int vertical_flip;
-
-	Inspection_Settings()
-	{
-		locator_width = 0;
-		locator_height = 0;
-		locator_level_tolerance = 0.0;
-		minimum_area = 0;
-		length_tolerance = 0.0;
-		kernel = 0;
-		sigma = 0.0;
-		pre_morph_count = 0;
-		roi_width_reduction = 0.0;
-		roi_y_offset = 0;
-		roi_y_offset_height = 0;
-        upper_h = 0;
-        upper_s = 0;
-        lower_h = 0;
-        lower_s = 0;
-		mapping_ratio = 0.0;
-		locator_threshold = 0;
-        min_distance = 0;
-        max_distance = 0;
-		fail_threshold = 0;
-		camera_shutter = 0;
-        camera_gain = 0;
-        vertical_flip = 0;
-
-
-	}
-
-};
 
 using namespace cv;
 
 class Measurement
 {
+
 public:
 	Measurement(void);
 	~Measurement(void);
@@ -105,8 +33,11 @@ public:
 	Mat back_roi_s;
 	Mat image_hsv;
 	Mat hsv[3];
+    Mat aux_color_image[10];
+    Mat aux_extraction_image[10];
 
     double result[100];
+    QList<double> result_ex;
 
     Inspection_Settings is[MAX_PRODUCT_COUNT*2];
 
@@ -117,8 +48,11 @@ private:
 	bool Perform_C3_Front(int thresh);
 
     bool Calculate_By_Locator_Method(int calculated_index, int thresh);
+    bool Calculate_By_Locator_Method_Ex(int calculated_index, int thresh);
+    bool Color_Blob_Extraction(Mat hsv_image, int min_h, int max_h, int min_s, int max_s, int min_v, int max_v, Rect* rect, Mat* in_range_image);
 
 	void Calculate_Reference_HS(Rect roi, double* low_h, double* low_s, double* high_h, double* high_s, int avg_row);
     int Calculate_HS_Transition(int calculated_index, Rect roi, int avg_row);
+
 };
 

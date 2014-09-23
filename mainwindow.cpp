@@ -5,6 +5,7 @@
 #include <QFileDialog>
 #include <QInputDialog>
 #include <QDebug>
+#include "ui_aux_viewer.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -12,7 +13,7 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);;
 
-    this->setWindowTitle(tr("Connector Inspection Terminal v2"));
+    this->setWindowTitle(tr("Connector Inspection Terminal v3"));
 
         learn_front_color_on_next_capture = false;
         learn_back_color_on_next_capture = false;
@@ -156,7 +157,6 @@ MainWindow::MainWindow(QWidget *parent) :
 
 MainWindow::~MainWindow()
 {
-
     qDebug("Request to destruct class MainWindow");
 
     // check if camera_thread is running, if so, stop thread properly
@@ -221,6 +221,7 @@ void MainWindow::Connect_Signals()
     connect(&lj_thread, SIGNAL(RedButtonTriggered()), this, SLOT(On_Red_Button_Triggered()));
 
     connect(ui->actionActual_Counter_Reset, SIGNAL(triggered()), this, SLOT(On_Action_Counter_Reset()));
+    connect(ui->actionAux_Viewer, SIGNAL(triggered()), this, SLOT(On_Action_Aux_Viewer()));
 
     connect(ui->Front_Min_Distance, SIGNAL(valueChanged(double)), this, SLOT(On_Front_Min_Distance_Changed(double)));
     connect(ui->Front_Max_Distance, SIGNAL(valueChanged(double)), this, SLOT(On_Front_Max_Distance_Changed(double)));
@@ -261,6 +262,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
 
     if (ret == QMessageBox::Ok)
     {
+        aux_view.close();
         event->accept();
     }
     else
@@ -295,6 +297,13 @@ void MainWindow::On_Frame_Received(int camera_index)
         measurement.Perform_Extraction(product_index * 2);
         process_time = qtime.elapsed();
         Display_Image(ui->View_Front, measurement.result_image.data, measurement.result_image.cols, measurement.result_image.rows);
+
+        // check if need to display aux images
+        if (measurement.is[product_index * 2].is_extended_type)
+        {
+            aux_view.Display_Image(aux_view.ui->Aux_0_Color, measurement.aux_color_image[0].data, measurement.aux_color_image[0].cols, measurement.aux_color_image[0].rows);
+            aux_view.Display_Image(aux_view.ui->Aux_0_In_Range, measurement.aux_extraction_image[0].data, measurement.aux_extraction_image[0].cols, measurement.aux_extraction_image[0].rows);
+        }
 
         if (measurement.result[0] == CAL_OK)
         {
@@ -1500,6 +1509,11 @@ void MainWindow::On_Back_Camera_Shutter_Changed(int value)
     qDebug() << "Back shutter settings saved:" <<  product_type[current_index].vision_ini_back << "for index:" << current_index * 2 + 1;
 
     measurement.Save_Settings(current_index * 2 + 1, product_type[current_index].vision_ini_back);
+}
+
+void MainWindow::On_Action_Aux_Viewer()
+{
+    aux_view.show();
 }
 
 

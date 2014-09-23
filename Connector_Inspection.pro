@@ -27,7 +27,8 @@ SOURCES += main.cpp\
     LJ_Wrapper.cpp \
     LJ_Thread.cpp \
     FrameObserver.cpp \
-    Camera_Thread.cpp
+    Camera_Thread.cpp \
+    aux_viewer.cpp
 
 HEADERS  += mainwindow.h \
     Vimba_Wrapper.h \
@@ -35,9 +36,12 @@ HEADERS  += mainwindow.h \
     LJ_Wrapper.h \
     LJ_Thread.h \
     FrameObserver.h \
-    Camera_Thread.h
+    Camera_Thread.h \
+    Definitions.h \
+    aux_viewer.h
 
-FORMS    += mainwindow.ui
+FORMS    += mainwindow.ui \
+    aux_viewer.ui
 
 QMAKE_LIBDIR += "C:/opencv/build/x86/vc10/lib" \
                 "C:/Program Files/Allied Vision Technologies/AVTVimbaSDK_1.1/VimbaCPP/Lib/Win32" \
