@@ -63,9 +63,9 @@
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout_3">
           <item>
-           <widget class="QLabel" name="label_2">
+           <widget class="QLabel" name="label">
             <property name="text">
-             <string>Maximum Width</string>
+             <string>Minimum Width</string>
             </property>
            </widget>
           </item>
@@ -90,14 +90,17 @@
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout_4">
           <item>
-           <widget class="QLabel" name="label">
+           <widget class="QLabel" name="label_2">
             <property name="text">
-             <string>Minimum Width</string>
+             <string>Maximum Width</string>
             </property>
            </widget>
           </item>
           <item>
            <widget class="QDoubleSpinBox" name="Front_Aux0_Maximum_Width">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="alignment">
              <set>Qt::AlignCenter</set>
             </property>
@@ -203,6 +206,9 @@
           </item>
           <item>
            <widget class="QDoubleSpinBox" name="Front_Aux1_Maximum_Width">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="alignment">
              <set>Qt::AlignCenter</set>
             </property>
@@ -257,6 +263,9 @@
           </item>
           <item>
            <widget class="QDoubleSpinBox" name="Front_Aux1_Maximum_Height">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="alignment">
              <set>Qt::AlignCenter</set>
             </property>
@@ -327,9 +336,9 @@
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout_10">
           <item>
-           <widget class="QLabel" name="label_7">
+           <widget class="QLabel" name="label_8">
             <property name="text">
-             <string>Maximum Width</string>
+             <string>Minimum Width</string>
             </property>
            </widget>
           </item>
@@ -354,14 +363,17 @@
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout_11">
           <item>
-           <widget class="QLabel" name="label_8">
+           <widget class="QLabel" name="label_7">
             <property name="text">
-             <string>Minimum Width</string>
+             <string>Maximum Width</string>
             </property>
            </widget>
           </item>
           <item>
            <widget class="QDoubleSpinBox" name="Back_Aux0_Maximum_Width">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="alignment">
              <set>Qt::AlignCenter</set>
             </property>
@@ -467,6 +479,9 @@
           </item>
           <item>
            <widget class="QDoubleSpinBox" name="Back_Aux1_Maximum_Width">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="alignment">
              <set>Qt::AlignCenter</set>
             </property>
@@ -521,6 +536,9 @@
           </item>
           <item>
            <widget class="QDoubleSpinBox" name="Back_Aux1_Maximum_Height">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="alignment">
              <set>Qt::AlignCenter</set>
             </property>

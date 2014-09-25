@@ -873,7 +873,7 @@
     <property name="title">
      <string>Controls</string>
     </property>
-    <addaction name="actionAux_Viewer"/>
+    <addaction name="actionExtended_Type0_Viewer"/>
     <addaction name="separator"/>
     <addaction name="actionActual_Counter_Reset"/>
     <addaction name="separator"/>
@@ -968,9 +968,9 @@
     <string>Clear Alarm</string>
    </property>
   </action>
-  <action name="actionAux_Viewer">
+  <action name="actionExtended_Type0_Viewer">
    <property name="text">
-    <string>Aux Viewer</string>
+    <string>Extended Type0 Viewer</string>
    </property>
   </action>
  </widget>

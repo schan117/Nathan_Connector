@@ -140,6 +140,18 @@ bool Measurement::Load_Settings(int index, QString filename)
 
             is[index].aux_roi_s_tolerance[i] = set.value(QString("Aux_ROI_Ex_Type0/Aux%1_S_Tolerance").arg(i)).toInt(&ok);
             if (!ok) return false;
+
+            is[index].aux_minimum_width[i] = set.value(QString("Decision_Ex_Type0/Aux%1_Min_Width").arg(i)).toDouble(&ok);
+            if (!ok) return false;
+
+            is[index].aux_maximum_width[i] = set.value(QString("Decision_Ex_Type0/Aux%1_Max_Width").arg(i)).toDouble(&ok);
+            if (!ok) return false;
+
+            is[index].aux_minimum_height[i] = set.value(QString("Decision_Ex_Type0/Aux%1_Min_Height").arg(i)).toDouble(&ok);
+            if (!ok) return false;
+
+            is[index].aux_maximum_height[i] = set.value(QString("Decision_Ex_Type0/Aux%1_Max_Height").arg(i)).toDouble(&ok);
+            if (!ok) return false;
         }
 
     }
@@ -205,7 +217,7 @@ bool Measurement::Perform_Extraction(int calculated_index)
 
     if (is[calculated_index].is_extended_type)
     {
-        if ( Calculate_By_Locator_Method_Ex(calculated_index, locator_threshold))
+        if ( Calculate_By_Locator_Method_Ex_Type0(calculated_index, locator_threshold))
         {
             return true;
         }
@@ -1661,7 +1673,7 @@ bool Measurement::Calculate_By_Locator_Method(int calculated_index, int thresh)
     return true;
 }
 
-bool Measurement::Calculate_By_Locator_Method_Ex(int calculated_index, int thresh)
+bool Measurement::Calculate_By_Locator_Method_Ex_Type0(int calculated_index, int thresh)
 {
     // check if need to vertical flip the image
     if (is[calculated_index].vertical_flip)
@@ -2021,10 +2033,23 @@ bool Measurement::Calculate_By_Locator_Method_Ex(int calculated_index, int thres
     }
 
     // go through the list and extract!
+    m_result_ex_type0.result_ex.clear();
+    m_result_ex_type0.average_aux_width.clear();
+    m_result_ex_type0.average_aux_height.clear();
+    // first, append the number of connector to the list
+    // then, append the number of aux roi for each connector
+    m_result_ex_type0.result_ex.append(locator_holes_rects.size());
+    m_result_ex_type0.result_ex.append(is[calculated_index].aux_roi_count);
 
-    result_ex.clear();
-    result_ex.append(locator_holes_rects.size());
-    result_ex.append(is[calculated_index].aux_roi_count);
+    double* width_sum  = new double[is[calculated_index].aux_roi_count];
+    double* height_sum = new double[is[calculated_index].aux_roi_count];
+
+    // initialize
+    for (int i=0; i<(int) m_result_ex_type0.result_ex[1]; i++)
+    {
+        width_sum[i] = 0;
+        height_sum[i] = 0;
+    }
 
     for (int i=0; i<locator_holes_rects.size(); i++)
     {
@@ -2033,6 +2058,8 @@ bool Measurement::Calculate_By_Locator_Method_Ex(int calculated_index, int thres
            Mat sub_hsv_image = image_hsv(aux_roi[i][j]);
            Mat in_range_image;
            Rect rect;
+           double temp_width;
+           double temp_height;
            if (Color_Blob_Extraction(sub_hsv_image,
                                  is[calculated_index].upper_h - is[calculated_index].aux_roi_h_tolerance[j],
                                  is[calculated_index].upper_h + is[calculated_index].aux_roi_h_tolerance[j],
@@ -2045,7 +2072,7 @@ bool Measurement::Calculate_By_Locator_Method_Ex(int calculated_index, int thres
            {
                if (i == 0)
                {
-                   // for the first work piece, get a sample for in range image as well
+                   // for the first work piece, get a sample image for the aux roi
 
                    // range image
                    cvtColor(in_range_image, aux_extraction_image[j], CV_GRAY2RGB);
@@ -2056,13 +2083,37 @@ bool Measurement::Calculate_By_Locator_Method_Ex(int calculated_index, int thres
                    rectangle(aux_color_image[j], Rect(rect.x, rect.y, rect.width, rect.height), Scalar(255,0,0), 1);
                }
 
+               temp_width = rect.width * is[calculated_index].mapping_ratio;
+               temp_height = rect.height * is[calculated_index].mapping_ratio;
 
+               m_result_ex_type0.result_ex.append(temp_width);
+               m_result_ex_type0.result_ex.append(temp_height);
+           }
+           else
+           {
+               temp_width = 0;
+               temp_height = 0;
+
+               m_result_ex_type0.result_ex.append(temp_width);
+               m_result_ex_type0.result_ex.append(temp_height);
            }
 
-           result_ex.append(rect.width * is[calculated_index].mapping_ratio);
-           result_ex.append(rect.height * is[calculated_index].mapping_ratio);
+           width_sum[j]  = width_sum[j] + temp_width;
+           height_sum[j] = height_sum[j] + temp_height;
         }
     }
+
+    // calculate the average width and height
+    for (int i=0; i<is[calculated_index].aux_roi_count; i++)
+    {
+        m_result_ex_type0.average_aux_width.append(width_sum[i] / (double) m_result_ex_type0.result_ex[0]);
+        m_result_ex_type0.average_aux_height.append(height_sum[i] / (double) m_result_ex_type0.result_ex[0]);
+    }
+
+    delete [] width_sum;
+    delete [] height_sum;
+
+    // All done!
 
     result[0] = CAL_OK;
     return true;

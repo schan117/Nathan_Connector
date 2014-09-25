@@ -39,6 +39,7 @@ public:
 
     void Connect_Signals();
 
+
     bool Initialize_Vimba_System();
     bool Load_Settings();
 
@@ -162,7 +163,9 @@ private:
 
     QString file_path;
 
-    Aux_Viewer aux_view;
+    Aux_Viewer extended_type0_viewer;
+
+    bool is_previous_inspection_failed;
 
 
 };

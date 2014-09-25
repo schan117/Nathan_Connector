@@ -221,7 +221,7 @@ void MainWindow::Connect_Signals()
     connect(&lj_thread, SIGNAL(RedButtonTriggered()), this, SLOT(On_Red_Button_Triggered()));
 
     connect(ui->actionActual_Counter_Reset, SIGNAL(triggered()), this, SLOT(On_Action_Counter_Reset()));
-    connect(ui->actionAux_Viewer, SIGNAL(triggered()), this, SLOT(On_Action_Aux_Viewer()));
+    connect(ui->actionExtended_Type0_Viewer, SIGNAL(triggered()), this, SLOT(On_Action_Aux_Viewer()));
 
     connect(ui->Front_Min_Distance, SIGNAL(valueChanged(double)), this, SLOT(On_Front_Min_Distance_Changed(double)));
     connect(ui->Front_Max_Distance, SIGNAL(valueChanged(double)), this, SLOT(On_Front_Max_Distance_Changed(double)));
@@ -233,8 +233,8 @@ void MainWindow::Connect_Signals()
 
     connect(ui->Product_Type, SIGNAL(currentIndexChanged(int)), this, SLOT(On_Product_Type_Changed(int)));
 
-    connect(&aux_view, SIGNAL(Front_Aux_Settings_Changed()), this, SLOT(On_Aux_Viewer_Front_Settings_Changed()));
-    connect(&aux_view, SIGNAL(Back_Aux_Settings_Changed()), this, SLOT(On_Aux_Viewer_Back_Settings_Changed()));
+    connect(&extended_type0_viewer, SIGNAL(Front_Aux_Settings_Changed()), this, SLOT(On_Aux_Viewer_Front_Settings_Changed()));
+    connect(&extended_type0_viewer, SIGNAL(Back_Aux_Settings_Changed()), this, SLOT(On_Aux_Viewer_Back_Settings_Changed()));
 
 }
 
@@ -265,7 +265,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
 
     if (ret == QMessageBox::Ok)
     {
-        aux_view.close();
+        extended_type0_viewer.close();
         event->accept();
     }
     else
@@ -358,6 +358,12 @@ void MainWindow::On_Frame_Received(int camera_index)
         measurement.Perform_Extraction(product_index * 2 + 1);
         process_time = qtime.elapsed();
         Display_Image(ui->View_Back, measurement.result_image.data, measurement.result_image.cols, measurement.result_image.rows);
+
+        // check if need to display aux images
+        if (measurement.is[product_index * 2 + 1].is_extended_type)
+        {
+            Display_Back_Aux_Images(product_index);
+        }
 
         if (measurement.result[0] == CAL_OK)
         {
@@ -461,8 +467,6 @@ void MainWindow::Display_Front_Inspection_Results(int index)
         if (avg < measurement.is[index * 2].min_distance)
         {
             result_string = result_string + ", Min: " + QString("%1").arg(measurement.is[index * 2].min_distance) + " mm,  Max: " + QString("%1").arg(measurement.is[index * 2].max_distance) + ", FAIL";
-
-
         }
         else
         {
@@ -470,6 +474,22 @@ void MainWindow::Display_Front_Inspection_Results(int index)
         }
 
         ui->Results->append(result_string);
+
+        // also append extended aux results
+
+        if (measurement.is[2 * index].is_extended_type)
+        {
+            if (measurement.is[2 * index].extended_type == EXTENDED_TYPE0)
+            {
+                result_string = "Extended Type 0:";
+                ui->Results->append(result_string);
+                for (int i=0; i<measurement.is[2 * index].aux_roi_count; i++)
+                {
+                    result_string = QString("Aux %1, average width: %2 mm, average height: %3 mm").arg(i).arg(measurement.m_result_ex_type0.average_aux_width[i]).arg(measurement.m_result_ex_type0.average_aux_height[i]);
+                    ui->Results->append(result_string);
+                }
+            }
+        }
 
         front_inspection_count = front_inspection_count + measurement.result[6];
         front_cycle_count++;
@@ -538,6 +558,22 @@ void MainWindow::Display_Back_Inspection_Results(int index)
 
         ui->Results->append(result_string);
 
+        // also append extended aux results
+
+        if (measurement.is[2 * index + 1].is_extended_type)
+        {
+            if (measurement.is[2 * index + 1].extended_type == EXTENDED_TYPE0)
+            {
+                result_string = "Extended Type 0:";
+                ui->Results->append(result_string);
+                for (int i=0; i<measurement.is[2 * index + 1].aux_roi_count; i++)
+                {
+                    result_string = QString("Aux %1, average width: %2 mm, average height: %3 mm").arg(i).arg(measurement.m_result_ex_type0.average_aux_width[i]).arg(measurement.m_result_ex_type0.average_aux_height[i]);
+                    ui->Results->append(result_string);
+                }
+            }
+        }
+
         back_inspection_count = back_inspection_count + measurement.result[6];
         back_cycle_count++;
 
@@ -556,7 +592,7 @@ void MainWindow::Display_Front_NA_Inspection_Results()
     }
     else if (measurement.result[0] == ROI_INVALID)
     {
-        ui->Results->append(tr("Front Error #3: Roi's of of screen."));
+        ui->Results->append(tr("Front Error #3: Roi's out of screen."));
     }
     else if (measurement.result[0] == TOO_MANY_ROI)
     {
@@ -593,7 +629,7 @@ void MainWindow::Display_Back_NA_Inspection_Results()
     }
     else if (measurement.result[0] == ROI_INVALID)
     {
-        ui->Results->append(tr("Back Error #3: Roi's of of screen."));
+        ui->Results->append(tr("Back Error #3: Roi's out of screen."));
     }
     else if (measurement.result[0] == TOO_MANY_ROI)
     {
@@ -644,10 +680,19 @@ void MainWindow::Display_Image(QLabel* view, uchar* data, int width, int height)
 
 void MainWindow::Display_Front_Aux_Images(int index)
 {
-    if (measurement.is[2 * index].extended_type == "Extended_Type0")
+    if (measurement.is[2 * index].extended_type == EXTENDED_TYPE0)
     {
-        aux_view.Display_Image(aux_view.ui->Front_Aux0_Color, measurement.aux_color_image[0].data, measurement.aux_color_image[0].cols, measurement.aux_color_image[0].rows);
-        aux_view.Display_Image(aux_view.ui->Front_Aux0_In_Range, measurement.aux_extraction_image[0].data, measurement.aux_extraction_image[0].cols, measurement.aux_extraction_image[0].rows);
+        extended_type0_viewer.Display_Image(extended_type0_viewer.ui->Front_Aux0_Color, measurement.aux_color_image[0].data, measurement.aux_color_image[0].cols, measurement.aux_color_image[0].rows);
+        extended_type0_viewer.Display_Image(extended_type0_viewer.ui->Front_Aux0_In_Range, measurement.aux_extraction_image[0].data, measurement.aux_extraction_image[0].cols, measurement.aux_extraction_image[0].rows);
+    }
+}
+
+void MainWindow::Display_Back_Aux_Images(int index)
+{
+    if (measurement.is[2 * index + 1].extended_type == EXTENDED_TYPE0)
+    {
+        extended_type0_viewer.Display_Image(extended_type0_viewer.ui->Back_Aux0_Color, measurement.aux_color_image[0].data, measurement.aux_color_image[0].cols, measurement.aux_color_image[0].rows);
+        extended_type0_viewer.Display_Image(extended_type0_viewer.ui->Back_Aux0_In_Range, measurement.aux_extraction_image[0].data, measurement.aux_extraction_image[0].cols, measurement.aux_extraction_image[0].rows);
     }
 }
 
@@ -676,6 +721,16 @@ void MainWindow::On_Product_Type_Changed(int index)
     disconnect(ui->Back_Max_Distance, SIGNAL(valueChanged(double)), this, SLOT(On_Back_Max_Distance_Changed(double)));
     disconnect(ui->Camera_Shutter_Back, SIGNAL(valueChanged(int)), this, SLOT(On_Back_Camera_Shutter_Changed(int)));
 
+    // Also disconnect aux viewer's signals
+    if (measurement.is[index * 2].is_extended_type || measurement.is[index * 2 + 1].is_extended_type)
+    {
+        if ( (measurement.is[index * 2].extended_type == EXTENDED_TYPE0) || (measurement.is[index * 2 + 1].extended_type == EXTENDED_TYPE0) )
+        {
+            disconnect(&extended_type0_viewer, SIGNAL(Front_Aux_Settings_Changed()), this, SLOT(On_Aux_Viewer_Front_Settings_Changed()));
+            disconnect(&extended_type0_viewer, SIGNAL(Back_Aux_Settings_Changed()), this, SLOT(On_Aux_Viewer_Back_Settings_Changed()));
+        }
+    }
+
     Display_Settings(index);
 
     connect(ui->Front_Threshold, SIGNAL(sliderReleased()), this, SLOT(On_Front_Locator_Threshold_Finished()));
@@ -689,6 +744,17 @@ void MainWindow::On_Product_Type_Changed(int index)
     connect(ui->Back_Min_Distance, SIGNAL(valueChanged(double)), this, SLOT(On_Back_Min_Distance_Changed(double)));
     connect(ui->Back_Max_Distance, SIGNAL(valueChanged(double)), this, SLOT(On_Back_Max_Distance_Changed(double)));
     connect(ui->Camera_Shutter_Back, SIGNAL(valueChanged(int)), this, SLOT(On_Back_Camera_Shutter_Changed(int)));
+
+    if (measurement.is[index * 2].is_extended_type || measurement.is[index * 2 + 1].is_extended_type)
+    {
+        if ( (measurement.is[index * 2].extended_type == EXTENDED_TYPE0) || (measurement.is[index * 2 + 1].extended_type == EXTENDED_TYPE0) )
+        {
+            connect(&extended_type0_viewer, SIGNAL(Front_Aux_Settings_Changed()), this, SLOT(On_Aux_Viewer_Front_Settings_Changed()));
+            connect(&extended_type0_viewer, SIGNAL(Back_Aux_Settings_Changed()), this, SLOT(On_Aux_Viewer_Back_Settings_Changed()));
+        }
+    }
+
+
 
 
 
@@ -782,11 +848,11 @@ void MainWindow::On_Start()
         if ( (measurement.is[product_index * 2].extended_type == "Extended_Type0") ||
              (measurement.is[product_index * 2 + 1].extended_type == "Extended_Type0" ) )
         {
-            ui->actionAux_Viewer->setEnabled(true);
+            ui->actionExtended_Type0_Viewer->setEnabled(true);
         }
         else
         {
-            ui->actionAux_Viewer->setEnabled(false);
+            ui->actionExtended_Type0_Viewer->setEnabled(false);
         }
 
 
@@ -833,6 +899,7 @@ void MainWindow::On_Stop()
         Stop_LJ();
 
         ui->actionStart_Data_Logging->setChecked(false);
+
     }
 
 }
@@ -851,6 +918,19 @@ void MainWindow::Display_Front_Settings(int index)
 
     ui->Camera_Shutter_Front->setValue(measurement.is[index * 2].camera_shutter);
 
+    if (measurement.is[2 * index].is_extended_type)
+    {
+        if (measurement.is[2 * index].extended_type == EXTENDED_TYPE0)
+        {
+            extended_type0_viewer.ui->Front_Aux0_Minimum_Width->setValue(measurement.is[2 * index].aux_minimum_width[0]);
+            extended_type0_viewer.ui->Front_Aux0_Maximum_Width->setValue(measurement.is[2 * index].aux_maximum_width[0]);
+          /*  extended_type0_viewer.ui->Front_Aux1_Minimum_Width->setValue(measurement.is[2 * index].aux_minimum_width[1]);
+            extended_type0_viewer.ui->Front_Aux1_Maximum_Width->setValue(measurement.is[2 * index].aux_maximum_width[1]);
+            extended_type0_viewer.ui->Front_Aux1_Minimum_Height->setValue(measurement.is[2 * index].aux_minimum_height[1]);
+            extended_type0_viewer.ui->Front_Aux1_Maximum_Height->setValue(measurement.is[2 * index].aux_maximum_height[1]);*/
+        }
+    }
+
 }
 
 void MainWindow::Display_Back_Settings(int index)
@@ -866,6 +946,19 @@ void MainWindow::Display_Back_Settings(int index)
     ui->Back_Max_Distance->setValue(measurement.is[2 * index + 1].max_distance);
 
     ui->Camera_Shutter_Back->setValue(measurement.is[2 * index + 1].camera_shutter);
+
+    if (measurement.is[2 * index + 1].is_extended_type)
+    {
+        if (measurement.is[2 * index + 1].extended_type == EXTENDED_TYPE0)
+        {
+            extended_type0_viewer.ui->Back_Aux0_Minimum_Width->setValue(measurement.is[2 * index + 1].aux_minimum_width[0]);
+            extended_type0_viewer.ui->Back_Aux0_Maximum_Width->setValue(measurement.is[2 * index + 1].aux_maximum_width[0]);
+          /*  extended_type0_viewer.ui->Back_Aux1_Minimum_Width->setValue(measurement.is[2 * index + 1].aux_minimum_width[1]);
+            extended_type0_viewer.ui->Back_Aux1_Maximum_Width->setValue(measurement.is[2 * index + 1].aux_maximum_width[1]);
+            extended_type0_viewer.ui->Back_Aux1_Minimum_Height->setValue(measurement.is[2 * index + 1].aux_minimum_height[1]);
+            extended_type0_viewer.ui->Back_Aux1_Maximum_Height->setValue(measurement.is[2 * index + 1].aux_maximum_height[1]);*/
+        }
+    }
 
 }
 
@@ -1066,7 +1159,25 @@ void MainWindow::Display_Front_Production_Status(int index)
 
     if (!bypass_result)
     {
-        if (avg <= min_distance || avg >= max_distance)
+        // judge whether the previous inspection that we just did, whether it is a pass or fail, criteria are different depending on whether
+        // it is an extended type
+
+        if (measurement.is[index * 2].is_extended_type)
+        {
+            if (measurement.is[index * 2].extended_type == EXTENDED_TYPE0)
+            {
+                is_previous_inspection_failed =  avg <= min_distance ||
+                                                 avg >= max_distance ||
+                        measurement.m_result_ex_type0.average_aux_width[0] <= measurement.is[index * 2].aux_minimum_width[0];
+            }
+        }
+        else
+        {
+            is_previous_inspection_failed = avg <= min_distance || avg >= max_distance;
+        }
+
+
+        if (is_previous_inspection_failed)
         {
             if (front_prev_result == false)
             {
@@ -1158,7 +1269,21 @@ void MainWindow::Display_Back_Production_Status(int index)
 
     if (!bypass_result)
     {
-        if (avg <= min_distance || avg >= max_distance)
+        if (measurement.is[index * 2 + 1].is_extended_type)
+        {
+            if (measurement.is[index * 2 + 1].extended_type == EXTENDED_TYPE0)
+            {
+                is_previous_inspection_failed =  avg <= min_distance ||
+                                                 avg >= max_distance ||
+                        measurement.m_result_ex_type0.average_aux_width[0] <= measurement.is[index * 2 + 1].aux_minimum_width[0];
+            }
+        }
+        else
+        {
+            is_previous_inspection_failed = avg <= min_distance || avg >= max_distance;
+        }
+
+        if (is_previous_inspection_failed)
         {
             if (back_prev_result == false)
             {
@@ -1273,7 +1398,7 @@ void MainWindow::Log_and_Process_Results(int calculated_index)
 
     QString result;
 
-    if (avg <= min_distance || avg >= max_distance)
+    if (is_previous_inspection_failed)
     {
         result = "FAIL";
     }
@@ -1290,6 +1415,24 @@ void MainWindow::Log_and_Process_Results(int calculated_index)
     {
          qts << date_string << ":\t" << ui->Product_Type->currentText() << "\t" << "Back Camera\t" << avg << " mm, Min: " << measurement.is[calculated_index].min_distance << " mm, Max: " << measurement.is[calculated_index].max_distance << "\t" << result << "\n\r";
     }
+
+    // Also write in extended results
+
+    if (measurement.is[calculated_index].is_extended_type)
+    {
+        if (measurement.is[calculated_index].extended_type == EXTENDED_TYPE0)
+        {
+            for (int i=0; i<measurement.is[calculated_index].aux_roi_count; i++)
+            {
+                QString s = QString("%1:\tAux%2, Average Width: %3 mm, Min: %4 mm, Average Height: %5 mm, Min: %6 mm").arg(date_string).arg(i)
+                        .arg(measurement.m_result_ex_type0.average_aux_width[i]).arg(measurement.is[calculated_index].aux_minimum_width[i])
+                        .arg(measurement.m_result_ex_type0.average_aux_height[i]).arg(measurement.is[calculated_index].aux_minimum_height[i]);
+                qts << s << "\n\r";
+            }
+
+        }
+    }
+
 
     file.close();
 
@@ -1539,7 +1682,7 @@ void MainWindow::On_Back_Camera_Shutter_Changed(int value)
 
 void MainWindow::On_Action_Aux_Viewer()
 {
-    aux_view.show();
+    extended_type0_viewer.show();
 }
 
 void MainWindow::On_Aux_Viewer_Front_Settings_Changed()
@@ -1547,14 +1690,14 @@ void MainWindow::On_Aux_Viewer_Front_Settings_Changed()
     QString current_product = ui->Product_Type->currentText();
     int current_index = ui->Product_Type->findText(current_product);
 
-    measurement.is[current_index * 2].aux_minimum_width[0] = aux_view.ui->Front_Aux0_Minimum_Width->value();
-    measurement.is[current_index * 2].aux_maximum_width[0] = aux_view.ui->Front_Aux0_Maximum_Width->value();
+    measurement.is[current_index * 2].aux_minimum_width[0] = extended_type0_viewer.ui->Front_Aux0_Minimum_Width->value();
+    measurement.is[current_index * 2].aux_maximum_width[0] = extended_type0_viewer.ui->Front_Aux0_Maximum_Width->value();
 
-    measurement.is[current_index * 2].aux_minimum_width[1] = aux_view.ui->Front_Aux1_Minimum_Width->value();
-    measurement.is[current_index * 2].aux_maximum_width[1] = aux_view.ui->Front_Aux1_Maximum_Width->value();
+    measurement.is[current_index * 2].aux_minimum_width[1] = extended_type0_viewer.ui->Front_Aux1_Minimum_Width->value();
+    measurement.is[current_index * 2].aux_maximum_width[1] = extended_type0_viewer.ui->Front_Aux1_Maximum_Width->value();
 
-    measurement.is[current_index * 2].aux_minimum_height[1] = aux_view.ui->Front_Aux1_Minimum_Height->value();
-    measurement.is[current_index * 2].aux_maximum_height[1] = aux_view.ui->Front_Aux1_Maximum_Height->value();
+    measurement.is[current_index * 2].aux_minimum_height[1] = extended_type0_viewer.ui->Front_Aux1_Minimum_Height->value();
+    measurement.is[current_index * 2].aux_maximum_height[1] = extended_type0_viewer.ui->Front_Aux1_Maximum_Height->value();
 
 
     qWarning() << "Aux Viewer Front settings changed, save settings for index:" << current_index * 2;
@@ -1566,14 +1709,14 @@ void MainWindow::On_Aux_Viewer_Back_Settings_Changed()
     QString current_product = ui->Product_Type->currentText();
     int current_index = ui->Product_Type->findText(current_product);
 
-    measurement.is[current_index * 2 + 1].aux_minimum_width[0] = aux_view.ui->Back_Aux0_Minimum_Width->value();
-    measurement.is[current_index * 2 + 1].aux_maximum_width[0] = aux_view.ui->Back_Aux0_Maximum_Width->value();
+    measurement.is[current_index * 2 + 1].aux_minimum_width[0] = extended_type0_viewer.ui->Back_Aux0_Minimum_Width->value();
+    measurement.is[current_index * 2 + 1].aux_maximum_width[0] = extended_type0_viewer.ui->Back_Aux0_Maximum_Width->value();
 
-    measurement.is[current_index * 2 + 1].aux_minimum_width[1] = aux_view.ui->Back_Aux1_Minimum_Width->value();
-    measurement.is[current_index * 2 + 1].aux_maximum_width[1] = aux_view.ui->Back_Aux1_Maximum_Width->value();
+    measurement.is[current_index * 2 + 1].aux_minimum_width[1] = extended_type0_viewer.ui->Back_Aux1_Minimum_Width->value();
+    measurement.is[current_index * 2 + 1].aux_maximum_width[1] = extended_type0_viewer.ui->Back_Aux1_Maximum_Width->value();
 
-    measurement.is[current_index * 2 + 1].aux_minimum_height[1] = aux_view.ui->Back_Aux1_Minimum_Height->value();
-    measurement.is[current_index * 2 + 1].aux_maximum_height[1] = aux_view.ui->Back_Aux1_Maximum_Height->value();
+    measurement.is[current_index * 2 + 1].aux_minimum_height[1] = extended_type0_viewer.ui->Back_Aux1_Minimum_Height->value();
+    measurement.is[current_index * 2 + 1].aux_maximum_height[1] = extended_type0_viewer.ui->Back_Aux1_Maximum_Height->value();
 
 
     qWarning() << "Aux Viewer Back settings changed, save settings for index:" << current_index * 2 + 1;

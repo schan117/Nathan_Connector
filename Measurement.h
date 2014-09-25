@@ -9,6 +9,7 @@
 #include "Definitions.h"
 //#include <math.h>
 
+
 using namespace cv;
 
 class Measurement
@@ -37,7 +38,7 @@ public:
     Mat aux_extraction_image[10];
 
     double result[100];
-    QList<double> result_ex;
+    result_ex_type0 m_result_ex_type0;
 
     Inspection_Settings is[MAX_PRODUCT_COUNT*2];
 
@@ -48,7 +49,7 @@ private:
 	bool Perform_C3_Front(int thresh);
 
     bool Calculate_By_Locator_Method(int calculated_index, int thresh);
-    bool Calculate_By_Locator_Method_Ex(int calculated_index, int thresh);
+    bool Calculate_By_Locator_Method_Ex_Type0(int calculated_index, int thresh);
     bool Color_Blob_Extraction(Mat hsv_image, int min_h, int max_h, int min_s, int max_s, int min_v, int max_v, Rect* rect, Mat* in_range_image);
 
 	void Calculate_Reference_HS(Rect roi, double* low_h, double* low_s, double* high_h, double* high_s, int avg_row);

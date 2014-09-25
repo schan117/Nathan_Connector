@@ -19,6 +19,8 @@
 
 #include <QString>
 
+#define EXTENDED_TYPE0 "Extended_Type0"
+
 struct Inspection_Settings
 {
     // basic parameters
@@ -103,6 +105,13 @@ struct Inspection_Settings
 
     }
 
+};
+
+struct result_ex_type0
+{
+    QList<double> result_ex;
+    QList<double> average_aux_width;
+    QList<double> average_aux_height;
 };
 
 #endif // DEFINITIONS_H

@@ -10,7 +10,6 @@ Aux_Viewer::Aux_Viewer(QWidget *parent) :
 
 Aux_Viewer::~Aux_Viewer()
 {
-    this->close();
     delete ui;
 }
 
